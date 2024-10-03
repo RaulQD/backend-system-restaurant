@@ -8,8 +8,8 @@ import categoryRoutes from './routes/category.routes.js';
 import roomsRoutes from './routes/rooms.routes.js';
 import tablesRoutes from './routes/tables.routes.js';
 import authRoutes from './routes/auth.routes.js';
-import { corsConfig } from './config/cors.js';
 import cors from 'cors';
+import { corsConfig } from './config/cors.js';
 
 dotenv.config();
 // connectDB();

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 import { UserModel } from '../models/user.js'
+import { body } from 'express-validator';
 
 export const validatetoken = async (req, res, next) => {
   // OBTENER EL TOKEN DESDE EL HEADER DE AUTORIZACIÓN
@@ -30,3 +31,10 @@ export const validatetoken = async (req, res, next) => {
   next();
 
 }
+
+export const loginValidation = [
+  body('username')
+    .notEmpty().withMessage('El nombre de usuario es requerido'),
+  body('password')
+    .notEmpty().withMessage('La contraseña es requerida')
+]

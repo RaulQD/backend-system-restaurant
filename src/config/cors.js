@@ -1,7 +1,7 @@
 
 export const corsConfig = {
   origin: (origin, callback) => {
-    const whileList = [process.env.FRONTEND_URL, 'http://localhost:5174'];
+    const whileList = [process.env.FRONTEND_URL];
     if (whileList.includes(origin) || !origin) {
       callback(null, true);
     } else {

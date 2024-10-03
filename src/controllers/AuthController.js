@@ -1,5 +1,4 @@
 import { pool } from "../config/mysql.js";
-import { AuthModel } from "../models/auth.js";
 import { EmployeeModel } from "../models/employees.js";
 import { RolModel } from "../models/rol.js";
 import { UserModel } from "../models/user.js";
@@ -13,12 +12,20 @@ export class AuthController {
         const { username, password } = req.body;
         try {
             const user = await UserModel.findByUser(username);
+            if (!user) {
+                throw new Error('Usuario o contraseña incorrectos');
+            }
             console.log(user);
+
+            const isValidPassword = await checkCompare(password, user.password);
+            if (!isValidPassword) {
+                throw new Error('Usuario o contraseña incorrectos');
+            }
+
             const token = generateToken(user);
 
-            await AuthModel.login(username, password);
             return res.status(200).json({
-                user: {
+                data: {
                     id: user.id,
                     username: user.username,
                     full_name: `${user.first_name} ${user.middle_name} ${user.last_name}`,
@@ -30,9 +37,9 @@ export class AuthController {
             });
 
         } catch (error) {
-            console.log(error);
+            console.log('Error en login:', error.message);
             return res.status(400).json({
-                message: error.message, // Mostrar mensaje de error
+                message: error.message || 'Ha ocurrido un error inesperado', // Mostrar mensaje de error
                 status: false // Mostrar que no se pudo realizar la operación
             });
         }
