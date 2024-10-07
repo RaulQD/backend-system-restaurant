@@ -23,6 +23,7 @@ export class AuthController {
             }
 
             const token = generateToken(user);
+            console.log(token);
 
             return res.status(200).json({
                 data: {
@@ -56,6 +57,12 @@ export class AuthController {
 
             const existingDni = await EmployeeModel.findByDni(dni)
             console.log(existingDni)
+
+            
+            // 6. Buscar rol por nombre
+            const roleResult = await RolModel.findByRolName(role_name);
+            console.log(roleResult);
+
             // 3. Generar UUID
             const [uuidResult] = await pool.query('SELECT UUID() uuid');
             const [{ uuid }] = uuidResult;
@@ -67,10 +74,6 @@ export class AuthController {
             // 5. Crear empleado
             const createEmployee = await EmployeeModel.createEmployee(req.body, uuid, userId);
             console.log('Empleado creado:', createEmployee);
-
-            // 6. Buscar rol por nombre
-            const roleResult = await RolModel.findByRolName(role_name);
-            console.log(roleResult);
 
             // 7. Asignar rol al usuario
             await RolModel.assignRoleToUser(uuid, roleResult[0].id_rol);

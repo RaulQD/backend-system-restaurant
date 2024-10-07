@@ -5,7 +5,7 @@ export class RoomsController {
   static async getAllRooms(req, res) {
     try {
       const rooms = await RoomsModel.getRooms()
-      return res.status(200).json(rooms || [])
+      return res.status(200).json(rooms)
     } catch (error) {
       console.log(error)
       return res.status(500).json({ message: error.message, status: false })

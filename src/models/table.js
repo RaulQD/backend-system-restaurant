@@ -22,15 +22,18 @@ export class TableModel {
     return { tables, countResult: countResults[0]?.count, };
   }
   static async getTablesByRoomName(room_name) {
-    const [results] = await pool.query('SELECT BIN_TO_UUID(t.id_table) as id_table, t.num_table, t.capacity_table, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE r.room_name = ?;', [room_name])
+    const [results] = await pool.query('SELECT BIN_TO_UUID(t.id_table) as id_table, t.num_table, t.capacity_table, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE r.room_name = ? ORDER BY t.num_table ASC;', [room_name])
     // GET JSON ARRAY OF THE RESULTS
     const tables = results.map(table => {
       return {
-        id: table.id_table,
+        id_table: table.id_table,
         num_table: table.num_table,
         capacity_table: table.capacity_table,
       }
     })
+    if(results.length === 0 ){
+      throw new Error('No se encontraron mesas con ese nombre de sala')
+    }
     return tables
   }
   static async createTable(data) {

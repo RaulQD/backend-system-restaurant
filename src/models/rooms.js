@@ -27,7 +27,7 @@ export class RoomsModel {
     const { room_name, num_tables } = data
     
     //1- CHECK IF THE ROOM NAME ALREADY EXISTS
-    const [existsRoom] = await pool.query('SELECT * FROM rooms WHERE room_name = ?', [room_name])
+    const [existsRoom] = await pool.query('SELECT BIN_TO_UUID(id_room), room_name FROM rooms WHERE room_name = ?', [room_name])
     if (existsRoom.length > 0) {
       throw new Error('El nombre de la sala ya existe')
     }
