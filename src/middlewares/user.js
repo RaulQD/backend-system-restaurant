@@ -37,6 +37,9 @@ export const userValidation = [
     .isNumeric().withMessage('El sueldo debe ser un número.')
     .isLength({ min: 4 }).withMessage('El sueldo debe tener al menos 4 caracteres.')
     .trim(),
+  body('hire_date')
+    .notEmpty().withMessage('Ingrese la fecha de contratación.')
+    .isDate().withMessage('La fecha de contratación debe ser una fecha válida.'),
   body('role_name')
     .notEmpty().withMessage('Ingrese el nombre del rol.'),
   body('username')

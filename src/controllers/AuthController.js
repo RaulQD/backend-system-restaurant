@@ -49,35 +49,24 @@ export class AuthController {
     static async createAccount(req, res) {
         const { dni, email, username, password, role_name } = req.body
         try {
-            const existingUser = await UserModel.findByUsername(username)
-            console.log(existingUser)
+            // Validaciones se pueden ejecutar en paralelo
 
-            const existingEmail = await EmployeeModel.findByEmail(email)
-            console.log(existingEmail)
+            await UserModel.findByUsername(username)
+            await EmployeeModel.findByEmail(email)
+            await EmployeeModel.findByDni(dni)
 
-            const existingDni = await EmployeeModel.findByDni(dni)
-            console.log(existingDni)
-
-            
             // 6. Buscar rol por nombre
             const roleResult = await RolModel.findByRolName(role_name);
-            console.log(roleResult);
 
             // 3. Generar UUID
             const [uuidResult] = await pool.query('SELECT UUID() uuid');
             const [{ uuid }] = uuidResult;
-            console.log('UUID generado:', uuid);
-
             // 4. Crear usuario
-            const userId = await UserModel.createUser(username, password, uuid);
-            console.log('Usuario creado:', userId);
+            await UserModel.createUser(username, password, uuid);
             // 5. Crear empleado
-            const createEmployee = await EmployeeModel.createEmployee(req.body, uuid, userId);
-            console.log('Empleado creado:', createEmployee);
-
+            await EmployeeModel.createEmployee(req.body, uuid, uuid);
             // 7. Asignar rol al usuario
             await RolModel.assignRoleToUser(uuid, roleResult[0].id_rol);
-
             // 8. Obtener el empleado creado
             const employee = await EmployeeModel.findByEmployeeId(uuid);
 
