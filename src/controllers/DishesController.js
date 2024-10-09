@@ -39,7 +39,7 @@ export class DishesController {
     try {
       // CREATE THE DISH
       const dish = await DishesModel.createdish(req.body); // Pasar el req.body directamente
-      return res.status(201).json({ message: 'Plato creado exitosamente', status: true, data: dish })
+      return res.status(201).json({ message: 'Plato creado exitosamente', status: true, dish })
     } catch (error) {
       console.log(error)
       return res.status(400).json({

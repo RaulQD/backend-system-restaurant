@@ -2,7 +2,7 @@ import { body } from "express-validator";
 
 
 export const userValidation = [
-  body('first_name')
+  body('names')
     .notEmpty().withMessage('Ingrese el nombre.')
     .isString().withMessage('El nombre debe ser una cadena de texto.')
     .isLength({ min: 3 }).withMessage('El nombre debe tener al menos 3 caracteres.')
@@ -12,7 +12,6 @@ export const userValidation = [
     .isString().withMessage('El apellido debe ser una cadena de texto.')
     .isLength({ min: 3 }).withMessage('El nombre debe tener al menos 3 caracteres.')
     .trim(),
-
   body('dni')
     .notEmpty().withMessage('Ingrese el número de documento.')
     .isLength({ max: 8, min: 8 }).withMessage('El DNI debe tener 8 caracteres.')
@@ -51,5 +50,4 @@ export const userValidation = [
     .notEmpty().withMessage('Ingrese la contraseña.')
     .isLength({ min: 8 }).withMessage('La contraseña debe tener al menos 8 caracteres.')
     .trim(),
-
 ];

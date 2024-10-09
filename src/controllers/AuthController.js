@@ -12,15 +12,9 @@ export class AuthController {
         const { username, password } = req.body;
         try {
             const user = await UserModel.findByUser(username);
-            if (!user) {
-                throw new Error('Usuario o contraseña incorrectos');
-            }
-            console.log(user);
 
-            const isValidPassword = await checkCompare(password, user.password);
-            if (!isValidPassword) {
-                throw new Error('Usuario o contraseña incorrectos');
-            }
+            console.log(user);
+            await UserModel.validatePassword(password, user.password);
 
             const token = generateToken(user);
             console.log(token);
@@ -38,9 +32,9 @@ export class AuthController {
             });
 
         } catch (error) {
-            console.log('Error en login:', error.message);
-            return res.status(400).json({
-                message: error.message || 'Ha ocurrido un error inesperado', // Mostrar mensaje de error
+            const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+            return res.status(statusCode).json({
+                message: error.message || 'Error interno del servidor',
                 status: false // Mostrar que no se pudo realizar la operación
             });
         }
@@ -50,7 +44,6 @@ export class AuthController {
         const { dni, email, username, password, role_name } = req.body
         try {
             // Validaciones se pueden ejecutar en paralelo
-
             await UserModel.findByUsername(username)
             await EmployeeModel.findByEmail(email)
             await EmployeeModel.findByDni(dni)
@@ -70,12 +63,13 @@ export class AuthController {
             // 8. Obtener el empleado creado
             const employee = await EmployeeModel.findByEmployeeId(uuid);
 
-            return res.status(201).json({ message: 'Cuenta creada exitosamente', status: true, data: employee[0] })
+            return res.status(201).json({ message: 'Cuenta creada exitosamente', status: true, data: employee })
         } catch (error) {
             console.log(error)
-            return res.status(400).json({
-                message: error.message, // Mostrar mensaje de error
-                status: false
+            const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+            return res.status(statusCode).json({
+                message: error.message || 'Error interno del servidor',
+                status: false // Mostrar que no se pudo realizar la operación
             });
         }
 

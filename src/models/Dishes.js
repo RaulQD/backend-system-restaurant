@@ -9,6 +9,11 @@ export class DishesModel {
     // Consulta para obtener el número total de platos sin paginación
     const [countResults] = await pool.query('SELECT COUNT(*) AS count FROM dishes')
 
+    // CHECK IF THERE ARE NO RESULTS IN THE QUERY
+    if (results.length === 0) {
+      throw new Error('No se encontraron platos con estos criterios de busqueda')
+    }
+
     //GET JSON ARRAY OF THE RESULTS
     const dishes = results.map(dish => {
       return {
@@ -57,7 +62,7 @@ export class DishesModel {
       throw new Error('La categoria no existe')
     }
     const [{ id }] = categoryResult
-    // 2- GET THE UUID OF THE DISH
+    // 2- GET THE UUID
     const [uuidResult] = await pool.query('SELECT UUID() uuid')
     const [{ uuid }] = uuidResult
     // 3- CHECK IF THE DISH ALREADY EXISTS

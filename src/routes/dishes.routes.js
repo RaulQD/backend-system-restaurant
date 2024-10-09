@@ -11,7 +11,7 @@ const routes = Router();
 
 
 routes.get('/', DishesController.getDishes)
-routes.post('/', validatetoken, dishValidation, handleInputErrors, DishesController.createDish)
+routes.post('/', dishValidation, handleInputErrors, DishesController.createDish)
 routes.get('/:id',
   param('id').isUUID().withMessage('Invalid dishes id'),
   handleInputErrors,
