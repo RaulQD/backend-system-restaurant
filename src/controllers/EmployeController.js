@@ -14,8 +14,8 @@ export class EmployeeController {
   }
   static async getEmployeeById(req, res) {
     try {
-      const { employeId } = req.params;
-      const employee = await EmployeeModel.getEmployeeById(employeId)
+      const { employeeId } = req.params;
+      const employee = await EmployeeModel.getEmployeeById(employeeId)
       response(res, 200, employee)
     } catch (error) {
       res.status(error.statusCode).json({ error: error.message, status: false })
@@ -25,22 +25,24 @@ export class EmployeeController {
     const { employeeId } = req.params;
     const { names, last_name, dni, email, phone, address, salary } = req.body;
     // 1- CHECK IF THE EMPLOYEE EXISTS
-    const employee = await EmployeeModel.getEmployeeById(employeeId);
+    const employeeResult = await EmployeeModel.findByEmployeeId(employeeId);
 
     // 2- CHECK IF THE EMAIL IS ALREADY IN USE
-    if (email !== employee.email) {
+    if (email !== employeeResult.email) {
       const existinEmail = await EmployeeModel.findByEmail(email);
       if (existinEmail) {
-        const error = new Error('El email ya está en uso.')
-        return res.status(400).json({ error: error.message, status: false })
+        const error = new Error('El email ya está en uso.');
+        error.statusCode = 400;
+        throw error; // Lanza un error si el email está en uso
       }
     }
     // 3- CHECK IF THE DNI IS ALREADY IN USE
-    if (dni !== employee.dni) {
+    if (dni !== employeeResult.dni) {
       const existingDni = await EmployeeModel.findByDni(dni);
       if (existingDni) {
-        const error = new Error('El DNI ya está en uso.')
-        return res.status(400).json({ error: error.message, status: false })
+        const error = new Error('El DNI ya está en uso.');
+        error.statusCode = 400;
+        throw error; // Lanza un error si el DNI está en uso
       }
     }
     try {
@@ -48,11 +50,11 @@ export class EmployeeController {
       await EmployeeModel.updateEmployee(employeeId, { names, last_name, dni, email, phone, address, salary })
       return res.json({ message: 'Empleado actualizado correctamente', status: true })
     } catch (error) {
-      console.log(error);
-      const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+      console.error('Error en updateEmployee:', error.message);
+      const statusCode = error.statusCode || 500; // Si no hay statusCode, se usa 500
       return res.status(statusCode).json({
-        message: error.message || 'Error interno del servidor',
-        status: false // Mostrar que no se pudo realizar la operación
+          message: error.message || 'Error interno del servidor',
+          status: false
       });
     }
   }

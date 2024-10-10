@@ -1,4 +1,5 @@
 import { pool } from "../config/mysql.js";
+import { ClientError } from "../utils/error.js";
 
 
 export class EmployeeModel {
@@ -21,14 +22,13 @@ export class EmployeeModel {
     return existingDni;
   }
   static async findByEmployeeId(uuid) {
-    const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(id_employee) id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE e.id_employee = UUID_TO_BIN(?)`, [uuid])
-    if (employee.length === 0) {
-      const error = new Error('Empleado no encontrado');
-      error.statusCode = 404;
+    const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(e.id_employee) id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = UUID_TO_BIN(?)`, [uuid])
+
+    if (employeeResult.length === 0) {
+      const error = new ClientError('Empleado no encontrado', 404);
       throw error;
     }
-    const employee = employeeResult[0];
-    return employee;
+    return employeeResult[0];
   }
   static async getEmployees(searchName, searchLastName, status) {
 
@@ -79,7 +79,7 @@ export class EmployeeModel {
     }
     const employee = employeeResult[0];
     //GET JSON ARRAY OF THE RESULTS
-    const response = {
+    return {
       id: employee.id,
       names: employee.names,
       last_name: employee.last_name,
@@ -95,7 +95,6 @@ export class EmployeeModel {
       }
     }
 
-    return response;
   }
   static async createEmployee(data, uuid, userId) {
     const { names, last_name, dni, email, phone, address, hire_date, salary } = data
@@ -107,7 +106,11 @@ export class EmployeeModel {
   static async updateEmployee(uuid, data) {
     const { names, last_name, dni, email, phone, address, salary } = data
     const [employeeResult] = await pool.query(`UPDATE employees SET names = ?, last_name = ?, dni = ?, email = ?, phone = ?, address = ?, salary = ? WHERE id_employee = UUID_TO_BIN(?)`, [names, last_name, dni, email, phone, address, salary, uuid]);
-
-    return employeeResult;
+    if (employeeResult.affectedRows === 0) {
+      const error = new Error('No se pudo actualizar el empleado');
+      error.statusCode = 400;
+      throw error; // Lanza error si no se afectaron filas
+  }
+  return employeeResult;
   }
 }

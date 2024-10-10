@@ -4,7 +4,6 @@ import morgan from 'morgan';
 import cors from 'cors';
 import { corsConfig } from './config/cors.js';
 import { connectMysql } from './config/mysql.js';
-// import { errorHandler } from './middlewares/errorHandler.js';
 
 // import { connectDB } from './config/mongoDB.js';
 import dishesRoutes from './routes/dishes.routes.js';
@@ -23,7 +22,6 @@ server.use(express.json())
 server.use(express.urlencoded({ extended: true }))
 server.use(morgan('dev'))
 server.use(cors(corsConfig))
-// server.use(errorHandler)
 
 server.use('/api/v1/dishes', dishesRoutes);
 server.use('/api/v1/category', categoryRoutes);

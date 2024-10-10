@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 import { UserModel } from '../models/user.js'
 import { body } from 'express-validator';
 
-export const validatetoken = async (req, res, next) => {
+export const validateToken = async (req, res, next) => {
   // OBTENER EL TOKEN DESDE EL HEADER DE AUTORIZACIÓN
   const authorization = req.headers.authorization;
 
