@@ -42,7 +42,9 @@ export class AuthController {
     }
     static async createAccount(req, res) {
         const { dni, email, username, password, role_name } = req.body
+
         try {
+
             // Validaciones se pueden ejecutar en paralelo
             await UserModel.findByUsername(username)
             await EmployeeModel.findByEmail(email)
@@ -50,10 +52,13 @@ export class AuthController {
 
             // 6. Buscar rol por nombre
             const roleResult = await RolModel.findByRolName(role_name);
-
             // 3. Generar UUID
             const [uuidResult] = await pool.query('SELECT UUID() uuid');
+            if (!uuidResult || uuidResult.length === 0) {
+                throw { message: 'Error al generar el UUID', statusCode: 500 };
+            }        
             const [{ uuid }] = uuidResult;
+            console.log(uuid);
             // 4. Crear usuario
             await UserModel.createUser(username, password, uuid);
             // 5. Crear empleado

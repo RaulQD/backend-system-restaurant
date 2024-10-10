@@ -21,13 +21,13 @@ export class EmployeeModel {
     return existingDni;
   }
   static async findByEmployeeId(uuid) {
-    const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(id_employee) id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE e.id_employee = UUID_TO_BIN(?)`, [uuid])
+    const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(id_employee) id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date, status FROM employees WHERE id_employee = UUID_TO_BIN(?)`, [uuid])
+    const employee = employeeResult[0];
     if (employee.length === 0) {
       const error = new Error('Empleado no encontrado');
       error.statusCode = 404;
       throw error;
     }
-    const employee = employeeResult[0];
     return employee;
   }
   static async getEmployees(searchName, searchLastName, status) {
@@ -99,7 +99,7 @@ export class EmployeeModel {
   }
   static async createEmployee(data, uuid, userId) {
     const { names, last_name, dni, email, phone, address, hire_date, salary } = data
-    const [employeeResult] = await pool.query(`INSERT INTO employees (id_employee,names, last_name, dni, email, phone, address, salary, hire_date, user_id) VALUES (UUID_TO_BIN("${uuid}"),?,?, ?, ?, ?, ?,?, ?, UUID_TO_BIN("${uuid}"))`,
+    const [employeeResult] = await pool.query(`INSERT INTO employees (id_employee, names, last_name, dni, email, phone, address, salary, hire_date, user_id) VALUES (UUID_TO_BIN("${uuid}"),?,?, ?, ?, ?, ?,?, ?, UUID_TO_BIN("${uuid}"))`,
       [names, last_name, dni, email, phone, address, parseFloat(salary), hire_date, userId]);
     return employeeResult;
   }
@@ -108,6 +108,16 @@ export class EmployeeModel {
     const { names, last_name, dni, email, phone, address, salary } = data
     const [employeeResult] = await pool.query(`UPDATE employees SET names = ?, last_name = ?, dni = ?, email = ?, phone = ?, address = ?, salary = ? WHERE id_employee = UUID_TO_BIN(?)`, [names, last_name, dni, email, phone, address, salary, uuid]);
 
+    return employeeResult;
+  }
+
+  static async deleteEmployee(uuid){
+    const [employeeResult] = await pool.query(`UPDATE employees SET status = 'no activo' WHERE id_employee = UUID_TO_BIN(?)`, [uuid]);	
+    if(employeeResult.affectedRows === 0){
+      const error = new Error('Empleado no encontrado');
+      error.statusCode = 404;
+      throw error;
+    }
     return employeeResult;
   }
 }

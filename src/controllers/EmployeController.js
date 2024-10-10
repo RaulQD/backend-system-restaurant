@@ -26,6 +26,11 @@ export class EmployeeController {
     const { names, last_name, dni, email, phone, address, salary } = req.body;
     // 1- CHECK IF THE EMPLOYEE EXISTS
     const employee = await EmployeeModel.getEmployeeById(employeeId);
+    if (!employee) {
+      const error = new Error('Empleado no encontrado');
+      error.statusCode = 404;
+      return res.status(404).json({ error: error.message, status: false })
+    }
 
     // 2- CHECK IF THE EMAIL IS ALREADY IN USE
     if (email !== employee.email) {
@@ -55,5 +60,21 @@ export class EmployeeController {
         status: false // Mostrar que no se pudo realizar la operación
       });
     }
+  }
+  static async deleteEmployee(req, res) {
+    const { employeeId } = req.params;
+    const { status } = req.body;
+      try {
+        await EmployeeModel.deleteEmployee(employeeId, status);
+        return res.json({ message: 'Empleado eliminado correctamente', status: true })
+        
+      } catch (error) {
+        console.log(error);
+        const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+        res.status(statusCode).json({
+          error:error.message || 'Error interno del servidor',
+          status: false // Mostrar que no se pudo realizar la operación
+        })
+      }
   }
 }
