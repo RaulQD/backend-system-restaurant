@@ -7,7 +7,7 @@ export class EmployeeController {
     try {
       const { searchName = '', searchLastName = '', status = '' } = req.query;
       const employees = await EmployeeModel.getEmployees(searchName, searchLastName, status)
-      response(res, 200, employees)
+      return res.status(200).json({ status: true, data: employees })
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message, status: false })
     }
@@ -64,17 +64,17 @@ export class EmployeeController {
   static async deleteEmployee(req, res) {
     const { employeeId } = req.params;
     const { status } = req.body;
-      try {
-        await EmployeeModel.deleteEmployee(employeeId, status);
-        return res.json({ message: 'Empleado eliminado correctamente', status: true })
-        
-      } catch (error) {
-        console.log(error);
-        const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
-        res.status(statusCode).json({
-          error:error.message || 'Error interno del servidor',
-          status: false // Mostrar que no se pudo realizar la operación
-        })
-      }
+    try {
+      await EmployeeModel.deleteEmployee(employeeId, status);
+      return res.json({ message: 'Empleado eliminado correctamente', status: true })
+
+    } catch (error) {
+      console.log(error);
+      const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+      res.status(statusCode).json({
+        error: error.message || 'Error interno del servidor',
+        status: false // Mostrar que no se pudo realizar la operación
+      })
+    }
   }
 }

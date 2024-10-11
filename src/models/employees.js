@@ -30,7 +30,9 @@ export class EmployeeModel {
     }
     return employee;
   }
-  static async getEmployees(searchName, searchLastName, status) {
+  static async getEmployees(searchName, searchLastName, status, page= 1, limit = 10) {
+
+    let offset = (page - 1) * limit;
 
     let query = `SELECT BIN_TO_UUID(e.id_employee) id, e.names, e.last_name, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1`
 
@@ -111,9 +113,9 @@ export class EmployeeModel {
     return employeeResult;
   }
 
-  static async deleteEmployee(uuid){
-    const [employeeResult] = await pool.query(`UPDATE employees SET status = 'no activo' WHERE id_employee = UUID_TO_BIN(?)`, [uuid]);	
-    if(employeeResult.affectedRows === 0){
+  static async deleteEmployee(uuid) {
+    const [employeeResult] = await pool.query(`UPDATE employees SET status = 'no activo' WHERE id_employee = UUID_TO_BIN(?)`, [uuid]);
+    if (employeeResult.affectedRows === 0) {
       const error = new Error('Empleado no encontrado');
       error.statusCode = 404;
       throw error;
