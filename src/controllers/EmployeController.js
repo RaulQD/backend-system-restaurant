@@ -5,9 +5,13 @@ import response from "../utils/response.js";
 export class EmployeeController {
   static async getEmployees(req, res) {
     try {
-      const { searchName = '', searchLastName = '', status = '' } = req.query;
-      const employees = await EmployeeModel.getEmployees(searchName, searchLastName, status)
-      return res.status(200).json({ status: true, data: employees })
+      const { searchName = '', searchLastName = '', status = '', page , limit } = req.query;
+
+      const pageParsed = parseInt(page) || 1;
+      const limitParsed = parseInt(limit) || 10;
+  
+      const employeeData = await EmployeeModel.getEmployees(searchName, searchLastName, status, pageParsed, limitParsed)
+      return res.status(200).json(employeeData)
     } catch (error) {
       return res.status(error.statusCode).json({ error: error.message, status: false })
     }

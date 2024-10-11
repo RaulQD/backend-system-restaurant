@@ -30,25 +30,39 @@ export class EmployeeModel {
     }
     return employee;
   }
-  static async getEmployees(searchName, searchLastName, status, page= 1, limit = 10) {
+  static async getEmployees(searchName, searchLastName, status, page = 1, limit = 10) {
 
     let offset = (page - 1) * limit;
 
     let query = `SELECT BIN_TO_UUID(e.id_employee) id, e.names, e.last_name, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1`
-
+    // Consulta para contar el número total de empleados
+    let countQuery = `SELECT COUNT(*) as total FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1
+`;
     const queryParams = []
     if (searchName) {
       query += ` AND (LOWER(e.names) LIKE LOWER(CONCAT('%', ?, '%')))`
+      countQuery += ` AND (LOWER(e.names) LIKE LOWER(CONCAT('%', ?, '%')))`
       queryParams.push(searchName)
     }
     if (searchLastName) {
       query += ` AND (LOWER(e.last_name) LIKE LOWER(CONCAT('%', ?, '%')))`
+      countQuery += ` AND (LOWER(e.last_name) LIKE LOWER(CONCAT('%', ?, '%')))`
       queryParams.push(searchLastName)
     }
     if (status) {
       query += ` AND e.status = ?`
+      countQuery += ` AND e.status = ?`
       queryParams.push(status)
     }
+    // Agregar paginación
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(limit, offset);
+
+    // Ejecutar la consulta de conteo para obtener el total de empleados
+    const [countResult] = await pool.query(countQuery, queryParams.slice(0, queryParams.length - 2)); // Excluir limit y offset
+    const totalEmployees = countResult[0].total;
+
+    // Ejecutar la consulta para obtener los empleados con paginación
     const [employeeResult] = await pool.query(query, queryParams)
     if (employeeResult.length === 0) {
       const error = new Error('No se encontraron empleados con estos criterios de busqueda.')
@@ -56,7 +70,7 @@ export class EmployeeModel {
       throw error
     }
 
-    const employees = employeeResult.map((employee) => {
+    const result = employeeResult.map((employee) => {
       return {
         id: employee.id,
         names: employee.names,
@@ -70,7 +84,14 @@ export class EmployeeModel {
       }
     })
 
-    return employees;
+    return {
+      result,
+      pagination: {
+        page,
+        limit,
+        totalEmployees
+      }
+    };
   }
   static async getEmployeeById(uuid) {
     const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(e.id_employee) id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = UUID_TO_BIN(?)`, [uuid])

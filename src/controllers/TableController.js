@@ -29,7 +29,6 @@ export class TableController {
   static async getTablesByRoomName(req, res) {
     const { room } = req.query
     try {
-      
       const tables = await TableModel.getTablesByRoomName(room)
       return res.status(200).json(tables)
     } catch (error) {
