@@ -1,21 +1,48 @@
 import { pool } from "../config/mysql.js";
 
 export class DishesModel {
-  static async getDishes(search, category, limitNumber, offset) {
+  static async getDishes(search, category, page = 1, limit = 10) {
+    let offset = (page - 1) * limit;
+
+    // Consulta para obtener los platos
+    let query = `SELECT BIN_TO_UUID(id_dish) id, dishes_name, dishes_description, price, available, BIN_TO_UUID(c.id_category) AS id_category, c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE 1=1`
+
+    // Consulta para contar el número total de platos
+    let countQuery = `SELECT COUNT(*) as total FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE 1=1`
+    const queryParams = []
+
+    // Agregar la búsqueda a la consulta
+    if (search) {
+      query += ` AND LOWER(d.dishes_name) LIKE LOWER(CONCAT('%', ?, '%'))`
+      countQuery += ` AND LOWER(d.dishes_name) LIKE LOWER(CONCAT('%', ?, '%'))`
+      queryParams.push(search)
+    }
+    // Agregar la categoría a la consulta
+    if (category) {
+      query += ` AND c.category_name = ?`
+      countQuery += ` AND c.category_name = ?`
+      queryParams.push(category)
+    }
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(limit, offset);
+    
+    // Ejecutar la consulta de conteo para obtener el total de empleados
+    const [countResults] = await pool.query(countQuery, queryParams)
+    const totalDishes = countResults[0].total;
 
 
-    const [results] = await pool.query(`SELECT BIN_TO_UUID(id_dish) id, dishes_name, dishes_description, price, available, BIN_TO_UUID(c.id_category) AS id_category, c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE (d.dishes_name LIKE CONCAT('%', ?, '%') OR ? = '') AND (c.category_name LIKE CONCAT('%', ?, '%') OR ? = '') LIMIT ? OFFSET ?`, [search, search, category, category, limitNumber, offset])
-
-    // Consulta para obtener el número total de platos sin paginación
-    const [countResults] = await pool.query('SELECT COUNT(*) AS count FROM dishes')
+    // Ejecutar la consulta para obtener los empleados con paginación
+    const [dishesResult] = await pool.query(query, queryParams)
 
     // CHECK IF THERE ARE NO RESULTS IN THE QUERY
-    if (results.length === 0) {
-      throw new Error('No se encontraron platos con estos criterios de busqueda')
+    if (dishesResult.length === 0) {
+      const error = new Error('No se encontraron platos con estos criterios de busqueda.')
+      error.statusCode = 404;
+      throw error
     }
 
     //GET JSON ARRAY OF THE RESULTS
-    const dishes = results.map(dish => {
+    const results = dishesResult.map(dish => {
       return {
         id: dish.id,
         dishes_name: dish.dishes_name,
@@ -30,8 +57,12 @@ export class DishesModel {
       }
     })
     return {
-      dishes,
-      countResult: countResults[0]?.count,
+      results,
+      pagination: {
+        page,
+        limit,
+        totalDishes
+      }
     };
   }
   static async getDishById(id) {

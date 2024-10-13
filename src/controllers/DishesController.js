@@ -2,26 +2,20 @@ import { DishesModel } from "../models/Dishes.js"
 
 export class DishesController {
   static async getDishes(req, res) {
-    const { search = '', category = '', page = 1, limit = 10 } = req.query
-    const limitNumber = Number(limit)
-    const pageNumber = Number(page)
-    const offset = (pageNumber - 1) * limitNumber
-    try {
-      const { dishes, countResult } = await DishesModel.getDishes(search, category, limitNumber, offset)
+    const { search = '', category = '', page, limit } = req.query
+    const limitNumber = Number(limit) || 10
+    const pageNumber = Number(page) || 1
 
-      res.status(200).json({
-        status: true,
-        data: dishes,
-        pagination: {
-          page: pageNumber,
-          limit: limitNumber,
-          totalResults: dishes.length, // Total de platos sin paginación
-          totalPages: Math.ceil(countResult / limitNumber), // Calcular total de páginas
-        }
-      });
+    try {
+      const dishesData = await DishesModel.getDishes(search, category, pageNumber, limitNumber)
+      return res.status(200).json(dishesData)
     } catch (error) {
       console.log(error)
-      return res.status(500).json({ message: 'Internal server error' })
+      const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+      return res.status(statusCode).json({
+        message: error.message || 'Error interno del servidor',
+        status: false // Mostrar que no se pudo realizar la operación
+      });
     }
   }
   static async getDishById(req, res) {

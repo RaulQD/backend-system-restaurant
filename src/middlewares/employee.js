@@ -2,8 +2,16 @@ import { body, query } from "express-validator";
 
 
 export const validateQueryEmployee = [
-  query('searchName').optional().isString().withMessage('El nombre debe ser un cadena de texto.').not().isNumeric().withMessage('El nombre no puede ser un número.'),
-  query('searchLastName').optional().isString().withMessage('el apellido debe ser un cadema de texto.'),
+  query('keyword')
+  .optional()
+  .isString().withMessage('El nombre debe ser un cadena de texto.')
+  .not()
+  .isNumeric().withMessage('El nombre no puede ser un número.'),
+  query('status')
+  .optional()
+  .isString().withMessage('El estado debe ser un cadena de texto.')
+  .not()
+  .isNumeric().withMessage('El estado no puede ser un número.'),
 ]
 
 export const employeeValidation = [

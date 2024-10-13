@@ -50,7 +50,7 @@ export class CategoryController {
         return res.status(404).json({ message: error.message, status: false })
       }
       // 2 - RETURN THE CATEGORIES
-      return res.status(200).json({ message: 'Categorias obtenidas exitosamente', status: true, data: categories })
+      return res.status(200).json(categories)
     } catch (error) {
       return res.status(500).json({ message: 'Internal server error' })
     }
@@ -79,7 +79,7 @@ export class CategoryController {
         const error = new Error('La categoria no existe')
         return res.status(404).json({ message: error.message, status: false })
       }
-      if(category_name){
+      if (category_name) {
         const [existingCategory] = await pool.query('SELECT * FROM category WHERE category_name = ? AND id_category != UUID_TO_BIN(?)', [category_name, id])
         if (existingCategory.length > 0) {
           const error = new Error('La categoria ya existe')

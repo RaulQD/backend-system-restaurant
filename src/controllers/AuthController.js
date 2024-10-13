@@ -1,3 +1,4 @@
+import { cloudinary } from "../config/cloudinary.config.js";
 import { pool } from "../config/mysql.js";
 import { EmployeeModel } from "../models/employees.js";
 import { RolModel } from "../models/rol.js";
@@ -56,12 +57,18 @@ export class AuthController {
             const [uuidResult] = await pool.query('SELECT UUID() uuid');
             if (!uuidResult || uuidResult.length === 0) {
                 throw { message: 'Error al generar el UUID', statusCode: 500 };
-            }        
+            }
             const [{ uuid }] = uuidResult;
             console.log(uuid);
             // 4. Crear usuario
             await UserModel.createUser(username, password, uuid);
-            // 5. Crear empleado
+            // // 5. Crear empleado
+            // const result = await cloudinary.uploader.upload(req.file.path, {
+            //     folder: 'employees'
+            // });
+            // const newEmployee = {
+            //     names, last_name, dni, email, phone, address, profile_picture_url: result.secure_url, hire_date, salary
+            // }
             await EmployeeModel.createEmployee(req.body, uuid, uuid);
             // 7. Asignar rol al usuario
             await RolModel.assignRoleToUser(uuid, roleResult[0].id_rol);
