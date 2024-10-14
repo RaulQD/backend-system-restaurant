@@ -23,6 +23,11 @@ export class TableModel {
   }
   static async getTablesByRoomName(room_name) {
     const [results] = await pool.query('SELECT BIN_TO_UUID(t.id_table) as id_table, t.num_table, t.capacity_table, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE r.room_name = ? ORDER BY t.num_table ASC;', [room_name])
+    if (results.length === 0) {
+      const error = new Error('No se encontraron mesas en la sala')
+      error.statusCode = 404 // Not found
+      throw error
+    }
     // GET JSON ARRAY OF THE RESULTS
     const tables = results.map(table => {
       return {
@@ -31,19 +36,17 @@ export class TableModel {
         capacity_table: table.capacity_table,
       }
     })
-    if(results.length === 0 ){
-      throw new Error('No se encontraron mesas con ese nombre de sala')
-    }
+
     return tables
   }
   static async createTable(data) {
     const { room_name, num_table, capacity_table } = data
     // 1- GET THE UUID OF THE ROOM
-    const [roomResult] = await pool.query('SELECT BIN_TO_UUID(id_room) id FROM rooms WHERE room_name = ?', [room_name])
-    if (roomResult.length === 0) {
+    const [tableResult] = await pool.query('SELECT BIN_TO_UUID(id_room) id FROM rooms WHERE room_name = ?', [room_name])
+    if (tableResult.length === 0) {
       throw new Error('La sala no existe')
     }
-    const [{ id }] = roomResult
+    const [{ id }] = tableResult
     // 2- GET THE UUID 
     const [uuidResult] = await pool.query('SELECT UUID() uuid')
     const [{ uuid }] = uuidResult

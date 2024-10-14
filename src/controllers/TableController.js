@@ -29,8 +29,7 @@ export class TableController {
   static async getTablesByRoomName(req, res) {
     const { room } = req.query
     try {
-      const decodedRoom = decodeURIComponent(room.replace(/\+/g, ' '));
-      const tables = await TableModel.getTablesByRoomName(decodedRoom)
+      const tables = await TableModel.getTablesByRoomName(room)
       return res.status(200).json(tables)
     } catch (error) {
       console.log(error)

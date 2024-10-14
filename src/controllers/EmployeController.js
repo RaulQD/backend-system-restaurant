@@ -4,13 +4,21 @@ import response from "../utils/response.js";
 
 export class EmployeeController {
   static async getEmployees(req, res) {
+    const { keyword = '', status = '', page, limit } = req.query;
+    const limitNumber = Number(limit) || 10;
+    const pageNumber = Number(page) || 1;
     try {
-      const { searchName = '', searchLastName = '', status = '' } = req.query;
-      const employees = await EmployeeModel.getEmployees(searchName, searchLastName, status)
-      response(res, 200, employees)
+      const employeeData = await EmployeeModel.getEmployees(keyword, status, pageNumber, limitNumber)
+      return res.status(200).json(employeeData)
     } catch (error) {
-      return res.status(error.statusCode).json({ error: error.message, status: false })
+      console.log(error);
+      const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+      return res.status(statusCode).json({
+        message: error.message || 'Error interno del servidor',
+        status: false // Mostrar que no se pudo realizar la operación
+      });
     }
+
   }
   static async getEmployeeById(req, res) {
     try {
@@ -24,27 +32,7 @@ export class EmployeeController {
   static async updateEmployee(req, res) {
     const { employeeId } = req.params;
     const { names, last_name, dni, email, phone, address, salary } = req.body;
-    // 1- CHECK IF THE EMPLOYEE EXISTS
-    const employeeResult = await EmployeeModel.findByEmployeeId(employeeId);
 
-    // 2- CHECK IF THE EMAIL IS ALREADY IN USE
-    if (email !== employeeResult.email) {
-      const existinEmail = await EmployeeModel.findByEmail(email);
-      if (existinEmail) {
-        const error = new Error('El email ya está en uso.');
-        error.statusCode = 400;
-        throw error; // Lanza un error si el email está en uso
-      }
-    }
-    // 3- CHECK IF THE DNI IS ALREADY IN USE
-    if (dni !== employeeResult.dni) {
-      const existingDni = await EmployeeModel.findByDni(dni);
-      if (existingDni) {
-        const error = new Error('El DNI ya está en uso.');
-        error.statusCode = 400;
-        throw error; // Lanza un error si el DNI está en uso
-      }
-    }
     try {
       // 4- UPDATE THE EMPLOYEE
       await EmployeeModel.updateEmployee(employeeId, { names, last_name, dni, email, phone, address, salary })
@@ -55,6 +43,22 @@ export class EmployeeController {
       return res.status(statusCode).json({
           message: error.message || 'Error interno del servidor',
           status: false
+      });
+    }
+  }
+  static async deleteEmployee(req, res) {
+    const { employeeId } = req.params;
+    const { status } = req.body;
+    try {
+      await EmployeeModel.deleteEmployee(employeeId, status);
+      return res.json({ message: 'Empleado eliminado correctamente', status: true })
+
+    } catch (error) {
+      console.log(error);
+      const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+      return res.status(statusCode).json({
+        message: error.message || 'Error interno del servidor',
+        status: false // Mostrar que no se pudo realizar la operación
       });
     }
   }

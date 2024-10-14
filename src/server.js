@@ -5,7 +5,6 @@ import cors from 'cors';
 import { corsConfig } from './config/cors.js';
 import { connectMysql } from './config/mysql.js';
 
-// import { connectDB } from './config/mongoDB.js';
 import dishesRoutes from './routes/dishes.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import roomsRoutes from './routes/rooms.routes.js';
@@ -14,7 +13,6 @@ import authRoutes from './routes/auth.routes.js';
 import employeesRoutes from './routes/employee.routes.js';
 
 dotenv.config();
-// connectDB();
 connectMysql();
 const server = express()
 

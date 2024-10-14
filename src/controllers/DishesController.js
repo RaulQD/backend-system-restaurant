@@ -1,27 +1,22 @@
+import { cloudinary } from "../config/cloudinary.config.js"
 import { DishesModel } from "../models/Dishes.js"
 
 export class DishesController {
   static async getDishes(req, res) {
-    const { search = '', category = '', page = 1, limit = 10 } = req.query
-    const limitNumber = Number(limit)
-    const pageNumber = Number(page)
-    const offset = (pageNumber - 1) * limitNumber
-    try {
-      const { dishes, countResult } = await DishesModel.getDishes(search, category, limitNumber, offset)
+    const { keyword = '', category = '', page, limit } = req.query
+    const limitNumber = Number(limit) || 10
+    const pageNumber = Number(page) || 1
 
-      res.status(200).json({
-        status: true,
-        data: dishes,
-        pagination: {
-          page: pageNumber,
-          limit: limitNumber,
-          totalResults: dishes.length, // Total de platos sin paginación
-          totalPages: Math.ceil(countResult / limitNumber), // Calcular total de páginas
-        }
-      });
+    try {
+      const dishesData = await DishesModel.getDishes(keyword, category, pageNumber, limitNumber)
+      return res.status(200).json(dishesData)
     } catch (error) {
       console.log(error)
-      return res.status(500).json({ message: 'Internal server error' })
+      const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+      return res.status(statusCode).json({
+        message: error.message || 'Error interno del servidor',
+        status: false // Mostrar que no se pudo realizar la operación
+      });
     }
   }
   static async getDishById(req, res) {
@@ -37,8 +32,22 @@ export class DishesController {
 
   static async createDish(req, res) {
     try {
+
+      const { dishes_name, dishes_description, price, available, category_name } = req.body
+      // Validación manual de la imagen
+      if (!req.file) {
+        return res.status(400).json({ error: 'La imagen del plato es requerida.' });
+      }
+      const result = await cloudinary.uploader.upload(`data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
+        folder: 'dishes'
+      })
+      const image_url = result.secure_url;
+      console.log(req.body);  // Para verificar que los campos se están recibiendo
+      console.log(req.file);
+      const dishesData = { dishes_name, dishes_description, price, available, image_url, category_name }
       // CREATE THE DISH
-      const dish = await DishesModel.createdish(req.body); // Pasar el req.body directamente
+      const dish = await DishesModel.createdish(dishesData); // Pasar el req.body directamente
+
       return res.status(201).json({ message: 'Plato creado exitosamente', status: true, dish })
     } catch (error) {
       console.log(error)
