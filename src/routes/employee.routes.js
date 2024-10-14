@@ -3,7 +3,6 @@ import { EmployeeController } from "../controllers/EmployeController.js";
 import { handleInputErrors } from "../middlewares/validation.js";
 import { validateQueryEmployee } from "../middlewares/employee.js";
 import { param } from "express-validator";
-import { upload } from "../helpers/cloudinary.js";
 
 
 

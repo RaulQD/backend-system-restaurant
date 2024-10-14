@@ -3,7 +3,6 @@ import { pool } from "../config/mysql.js";
 import { EmployeeModel } from "../models/employees.js";
 import { RolModel } from "../models/rol.js";
 import { UserModel } from "../models/user.js";
-import { checkCompare } from "../utils/bcrypt.js";
 import { generateToken } from "../utils/jwt.js";
 
 
@@ -62,14 +61,16 @@ export class AuthController {
             console.log(uuid);
             // 4. Crear usuario
             await UserModel.createUser(username, password, uuid);
-            // // 5. Crear empleado
-            // const result = await cloudinary.uploader.upload(req.file.path, {
-            //     folder: 'employees'
-            // });
-            // const newEmployee = {
-            //     names, last_name, dni, email, phone, address, profile_picture_url: result.secure_url, hire_date, salary
-            // }
-            await EmployeeModel.createEmployee(req.body, uuid, uuid);
+            //  5. Crear empleado
+            if (!req.file) {
+                return res.status(400).json({ error: 'La imagen del plato es requerida.' });
+            }
+            const result = await cloudinary.uploader.upload(`data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
+                folder: 'employees'
+            })
+            const profile_picture_url = result.secure_url;
+            // const employeeData = {names, last_name, dni, email, phone, address, profile_picture_url, hire_date, salary}
+            await EmployeeModel.createEmployee({ ...req.body, profile_picture_url }, uuid, uuid);
             // 7. Asignar rol al usuario
             await RolModel.assignRoleToUser(uuid, roleResult[0].id_rol);
             // 8. Obtener el empleado creado

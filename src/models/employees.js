@@ -34,7 +34,7 @@ export class EmployeeModel {
 
     let offset = (page - 1) * limit;
 
-    let query = `SELECT BIN_TO_UUID(e.id_employee) id, e.names, e.last_name, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1`
+    let query = `SELECT BIN_TO_UUID(e.id_employee) id, e.names, e.last_name, e.profile_picture_url, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1`
 
     // Consulta para contar el número total de empleados
     let countQuery = `SELECT COUNT(*) as total FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1
@@ -59,12 +59,26 @@ export class EmployeeModel {
     // Ejecutar la consulta de conteo para obtener el total de empleados
     const [countResult] = await pool.query(countQuery, queryParams);
     const totalEmployees = countResult[0].total;
-    if(totalEmployees === 0) {
-      const error = new Error('No se encontraron empleados con estos criterios de busqueda.')
-      error.statusCode = 404;
-      throw error
-    }
 
+    if (totalEmployees === 0) {
+      if (keyword && status) {
+        const error = new Error(`No se encontraron empleados con el nombre ${keyword} y el estado ${status}.`);
+        error.statusCode = 404;
+        throw error;
+      } else if (keyword) {
+        const error = new Error(`No se encontraron empleados con este nombre ${keyword} .`);
+        error.statusCode = 404;
+        throw error;
+      } else if (status) {
+        const error = new Error(`No se encontraron empleados con el estado sugerido.`);
+        error.statusCode = 404;
+        throw error;
+      } else {
+        const error = new Error('No se encontraron empleados.');
+        error.statusCode = 404;
+        throw error;
+      }
+    }
     // Ejecutar la consulta para obtener los empleados con paginación
     const [employeeResult] = await pool.query(query, queryParams)
 
@@ -82,12 +96,12 @@ export class EmployeeModel {
         salary: employee.salary,
         hire_date: employee.hire_date,
         status: employee.status,
+        profile_picture_url: employee.profile_picture_url,
         role: {
           name: employee.role_name
         }
       }
     })
-    console.log(result);
     return {
       result,
       pagination: {
