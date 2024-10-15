@@ -4,7 +4,6 @@ import { DishesController } from "../controllers/DishesController.js";
 import { handleInputErrors } from "../middlewares/validation.js";
 import { dishValidation } from "../middlewares/dish.js";
 import { param } from "express-validator";
-import { validatetoken } from "../middlewares/auth.js";
 import { upload } from "../helpers/multer.js";
 
 

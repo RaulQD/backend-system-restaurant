@@ -2,7 +2,7 @@ import { Router } from "express";
 import { AuthController } from "../controllers/AuthController.js";
 import { handleInputErrors } from "../middlewares/validation.js";
 import { userValidation } from "../middlewares/user.js";
-import { loginValidation, validatetoken } from "../middlewares/auth.js";
+import { loginValidation } from "../middlewares/auth.js";
 import { upload } from "../helpers/multer.js";
 
 

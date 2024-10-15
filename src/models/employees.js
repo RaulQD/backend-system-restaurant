@@ -22,7 +22,7 @@ export class EmployeeModel {
     return existingDni;
   }
   static async findByEmployeeId(uuid) {
-    const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(id_employee) id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE e.id_employee = UUID_TO_BIN(?)`, [uuid])
+    const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(id_employee) id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = UUID_TO_BIN(?)`, [uuid])
     if (employee.length === 0) {
       const error = new Error('Empleado no encontrado');
       error.statusCode = 404;
