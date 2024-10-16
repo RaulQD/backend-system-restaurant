@@ -3,7 +3,7 @@ import { pool } from "../config/mysql.js";
 import { EmployeeModel } from "../models/employees.js";
 import { RolModel } from "../models/rol.js";
 import { UserModel } from "../models/user.js";
-import { generateToken } from "../utils/jwt.js";
+import { generateJWT } from "../utils/jwt.js";
 
 
 export class AuthController {
@@ -12,18 +12,18 @@ export class AuthController {
         const { username, password } = req.body;
         try {
             const user = await UserModel.findByUser(username);
-
-            console.log(user);
             await UserModel.validatePassword(password, user.password);
 
-            const token = generateToken(user);
-            console.log(token);
+            const token = generateJWT({
+                id: user.id
+            });
+            console.log('token:', token);
 
             return res.status(200).json({
                 data: {
                     id: user.id,
                     username: user.username,
-                    full_name: `${user.first_name} ${user.middle_name} ${user.last_name}`,
+                    full_name: `${user.names} ${user.last_name}`,
                     role: {
                         name: user.role_name
                     }
@@ -85,6 +85,36 @@ export class AuthController {
                 status: false // Mostrar que no se pudo realizar la operación
             });
         }
+    }
 
+    static async getProfile(req, res) {
+        try {
+            const { id } = req.user
+            const user = await UserModel.findByUserId(id)
+
+            if (!user) {
+                return res.status(404).json({
+                    error: 'Usuario no encontrado',
+                    status: false
+                })
+            }
+            return res.status(200).json({
+                data: {
+                    id: user.id,
+                    username: user.username,
+                    full_name: `${user.names} ${user.last_name}`,
+                    role: {
+                        name: user.role_name
+                    }
+                }
+            })
+        } catch (error) {
+            console.log(error)
+            const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+            return res.status(statusCode).json({
+                error: error.message || 'Error interno del servidor',
+                status: false // Mostrar que no se pudo realizar la operación
+            });
+        }
     }
 }

@@ -58,7 +58,8 @@ export class EmployeeModel {
     queryParams.push(limit, offset);
 
     // Ejecutar la consulta de conteo para obtener el total de empleados
-    const [countResult] = await pool.query(countQuery, queryParams);
+    const countQueryParams = [...queryParams];
+    const [countResult] = await pool.query(countQuery, countQueryParams);
     const totalEmployees = countResult[0].total;
 
     if (totalEmployees === 0) {

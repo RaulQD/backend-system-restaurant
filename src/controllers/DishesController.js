@@ -34,6 +34,7 @@ export class DishesController {
     try {
 
       const { dishes_name, dishes_description, price, available, category_name } = req.body
+      console.log(req.user);
       // Validación manual de la imagen
       if (!req.file) {
         return res.status(400).json({ error: 'La imagen del plato es requerida.' });
@@ -42,8 +43,6 @@ export class DishesController {
         folder: 'dishes'
       })
       const image_url = result.secure_url;
-      console.log(req.body);  // Para verificar que los campos se están recibiendo
-      console.log(req.file);
       const dishesData = { dishes_name, dishes_description, price, available, image_url, category_name }
       // CREATE THE DISH
       const dish = await DishesModel.createdish(dishesData); // Pasar el req.body directamente
