@@ -12,7 +12,7 @@ const routes = Router();
 
 
 routes.get('/', DishesController.getDishes)
-routes.post('/', upload.single('image_url'), validateToken, dishValidation, handleInputErrors, DishesController.createDish)
+routes.post('/', upload.single('image_url'), dishValidation, handleInputErrors, DishesController.createDish)
 routes.get('/:id',
   param('id').isUUID().withMessage('Invalid dishes id'),
   handleInputErrors,
