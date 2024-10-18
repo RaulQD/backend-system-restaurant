@@ -34,10 +34,12 @@ export class DishesController {
     try {
 
       const { dishes_name, dishes_description, price, available, category_name } = req.body
-      console.log(req.user);
+
       // Validación manual de la imagen
       if (!req.file) {
-        return res.status(400).json({ error: 'La imagen del plato es requerida.' });
+        const error = new Error('La imagen del plato es requerida.');
+        error.statusCode = 400;
+        throw error;
       }
       const result = await cloudinary.uploader.upload(`data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
         folder: 'dishes'
@@ -45,9 +47,8 @@ export class DishesController {
       const image_url = result.secure_url;
       const dishesData = { dishes_name, dishes_description, price, available, image_url, category_name }
       // CREATE THE DISH
-      const dish = await DishesModel.createdish(dishesData); // Pasar el req.body directamente
-
-      return res.status(201).json({ message: 'Plato creado exitosamente', status: true, dish })
+      const resultData = await DishesModel.createdish(dishesData); // Pasar el req.body directamente
+      return res.status(201).json({ message: 'Plato creado exitosamente', status: true, resultData })
     } catch (error) {
       console.log(error)
       return res.status(400).json({
