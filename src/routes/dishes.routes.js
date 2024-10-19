@@ -5,7 +5,6 @@ import { handleInputErrors } from "../middlewares/validation.js";
 import { dishValidation } from "../middlewares/dish.js";
 import { param } from "express-validator";
 import { upload } from "../helpers/multer.js";
-import { validateToken } from "../middlewares/auth.js";
 
 
 const routes = Router();

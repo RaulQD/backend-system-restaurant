@@ -98,16 +98,15 @@ export class AuthController {
                     status: false
                 })
             }
-            return res.status(200).json({
-                data: {
-                    id: user.id,
-                    username: user.username,
-                    full_name: `${user.names} ${user.last_name}`,
-                    role: {
-                        name: user.role_name
-                    }
+            const data = {
+                id: user.id,
+                username: user.username,
+                full_name: `${user.names} ${user.last_name}`,
+                role: {
+                    name: user.role_name
                 }
-            })
+            }
+            return res.status(200).json(data)
         } catch (error) {
             console.log(error)
             const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
