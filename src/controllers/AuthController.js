@@ -18,18 +18,17 @@ export class AuthController {
                 id: user.id
             });
             console.log('token:', token);
-
-            return res.status(200).json({
-                data: {
-                    id: user.id,
-                    username: user.username,
-                    full_name: `${user.names} ${user.last_name}`,
-                    role: {
-                        name: user.role_name
-                    }
+            const employeeData = {
+                id: user.id,
+                username: user.username,
+                full_name: `${user.names} ${user.last_name}`,
+                role: {
+                    name: user.role_name
                 },
                 token
-            });
+            }
+
+            return res.status(200).json(employeeData);
 
         } catch (error) {
             const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
@@ -89,6 +88,7 @@ export class AuthController {
         }
     }
 
+
     static async getProfile(req, res) {
         try {
             const { id } = req.user
@@ -100,16 +100,17 @@ export class AuthController {
                     status: false
                 })
             }
-            return res.status(200).json({
-                data: {
-                    id: user.id,
-                    username: user.username,
-                    full_name: `${user.names} ${user.last_name}`,
-                    role: {
-                        name: user.role_name
-                    }
+            const employee = {
+                id: user.id,
+                username: user.username,
+                full_name: `${user.names} ${user.last_name}`,
+                profile_picture_url: user.profile_picture_url,
+                role: {
+                    name: user.role_name
                 }
-            })
+            }
+
+            return res.status(200).json(employee)
         } catch (error) {
             console.log(error)
             const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
