@@ -74,8 +74,9 @@ export class AuthController {
             // 7. Asignar rol al usuario
             await RolModel.assignRoleToUser(uuid, roleResult[0].id_rol);
             // 8. Obtener el empleado creado
+            console.log('Buscando empleado por UUID:', uuid);
             const employee = await EmployeeModel.findByEmployeeId(uuid);
-
+            console.log('Empleado encontrado:', employee);
             return res.status(201).json({ message: 'Cuenta creada exitosamente', status: true, data: employee })
         } catch (error) {
             console.log(error)

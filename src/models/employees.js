@@ -23,12 +23,12 @@ export class EmployeeModel {
   }
   static async findByEmployeeId(uuid) {
     const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(id_employee) id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = UUID_TO_BIN(?)`, [uuid])
+    const employee = employeeResult[0];
     if (employee.length === 0) {
       const error = new Error('Empleado no encontrado');
       error.statusCode = 404;
       throw error;
     }
-    const employee = employeeResult[0];
     return employee;
   }
   static async getEmployees(keyword, status, page = 1, limit = 10) {
@@ -173,8 +173,8 @@ export class EmployeeModel {
       const error = new Error('No se pudo actualizar el empleado');
       error.statusCode = 400;
       throw error; // Lanza error si no se afectaron filas
-  }
-  return employeeResult;
+    }
+    return employeeResult;
   }
 
   static async deleteEmployee(uuid) {
