@@ -18,18 +18,17 @@ export class AuthController {
                 id: user.id
             });
             console.log('token:', token);
-
-            return res.status(200).json({
-                data: {
-                    id: user.id,
-                    username: user.username,
-                    full_name: `${user.names} ${user.last_name}`,
-                    role: {
-                        name: user.role_name
-                    }
+            const employeeData = {
+                id: user.id,
+                username: user.username,
+                full_name: `${user.names} ${user.last_name}`,
+                role: {
+                    name: user.role_name
                 },
                 token
-            });
+            }
+
+            return res.status(200).json(employeeData);
 
         } catch (error) {
             const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
@@ -63,7 +62,9 @@ export class AuthController {
             await UserModel.createUser(username, password, uuid);
             //  5. Crear empleado
             if (!req.file) {
-                return res.status(400).json({ error: 'La imagen del plato es requerida.' });
+                const error = new Error('La imagen del plato es requerida.');
+                error.statusCode = 400;
+                throw error;
             }
             const result = await cloudinary.uploader.upload(`data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
                 folder: 'employees'
@@ -76,7 +77,7 @@ export class AuthController {
             // 8. Obtener el empleado creado
             const employee = await EmployeeModel.findByEmployeeId(uuid);
 
-            return res.status(201).json({ message: 'Cuenta creada exitosamente', status: true, data: employee })
+            return res.status(201).json({ message: 'Cuenta creada exitosamente', status: true, employee })
         } catch (error) {
             console.log(error)
             const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
@@ -86,6 +87,7 @@ export class AuthController {
             });
         }
     }
+
 
     static async getProfile(req, res) {
         try {
@@ -98,15 +100,17 @@ export class AuthController {
                     status: false
                 })
             }
-            const data = {
+            const employee = {
                 id: user.id,
                 username: user.username,
                 full_name: `${user.names} ${user.last_name}`,
+                profile_picture_url: user.profile_picture_url,
                 role: {
                     name: user.role_name
                 }
             }
-            return res.status(200).json(data)
+
+            return res.status(200).json(employee)
         } catch (error) {
             console.log(error)
             const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
