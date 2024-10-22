@@ -1,5 +1,5 @@
 import { pool } from "../config/mysql.js"
-import { v4 as uuidv4 } from 'uuid';
+import { CategoryModel } from "../models/Category.js";
 
 export class CategoryController {
 
@@ -44,27 +44,24 @@ export class CategoryController {
 
       // 4 - USE THE VALUES TO FILTER THE CATEGORIES FROM THE DATABASE
       // 1 - GET ALL GATEGORIES FROM DATABASE
-      const [categories] = await pool.query('SELECT BIN_TO_UUID(id_category) id, category_name, category_description FROM category')
-      if (categories.length === 0) {
-        const error = new Error('No hay ninguna categoria en la base de datos')
-        return res.status(404).json({ message: error.message, status: false })
-      }
+      const categories = await CategoryModel.getCategories()
       // 2 - RETURN THE CATEGORIES
       return res.status(200).json(categories)
     } catch (error) {
-      return res.status(500).json({ message: 'Internal server error' })
+      console.log(error)
+      const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+      return res.status(statusCode).json({
+        message: error.message || 'Error interno del servidor',
+        status: false // Mostrar que no se pudo realizar la operación
+      });
     }
   }
 
   static async getCategoryById(req, res) {
     try {
       const { id } = req.params
-      const [category] = await pool.query('SELECT BIN_TO_UUID(id_category) id, category_name, category_description FROM category WHERE id_category = UUID_TO_BIN(?)', [id])
-      if (category.length === 0) {
-        const error = new Error('La categoria no existe')
-        return res.status(404).json({ message: error.message, status: false })
-      }
-      return res.status(200).json({ message: 'Categoria obtenida exitosamente', status: true, data: category[0] })
+      const category = await CategoryModel.getCategoryById(id)
+      return res.status(200).json(category)
     } catch (error) {
       console.log(error)
       return res.status(500).json({ message: 'Internal server error' })

@@ -91,14 +91,7 @@ export class AuthController {
     static async getProfile(req, res) {
         try {
             const { id } = req.user
-            const user = await UserModel.findByUserId(id)
-
-            if (!user) {
-                return res.status(404).json({
-                    error: 'Usuario no encontrado',
-                    status: false
-                })
-            }
+          const user =  await UserModel.findByUserId(id)
             const employee = {
                 id: user.id,
                 username: user.username,
@@ -108,7 +101,6 @@ export class AuthController {
                     name: user.role_name
                 }
             }
-
             return res.status(200).json(employee)
         } catch (error) {
             console.log(error)
