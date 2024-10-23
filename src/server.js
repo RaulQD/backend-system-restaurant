@@ -11,6 +11,7 @@ import roomsRoutes from './routes/rooms.routes.js';
 import tablesRoutes from './routes/tables.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import employeesRoutes from './routes/employee.routes.js';
+import ordersRoutes from './routes/order.routes.js';
 
 dotenv.config();
 connectMysql();
@@ -27,6 +28,7 @@ server.use('/api/v1/rooms', roomsRoutes);
 server.use('/api/v1/tables', tablesRoutes);
 server.use('/api/v1/auth', authRoutes);
 server.use('/api/v1/employees', employeesRoutes);
+server.use('/api/v1/orders', ordersRoutes);
 
 
 export default server;

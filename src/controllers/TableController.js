@@ -26,6 +26,20 @@ export class TableController {
       });
     }
   }
+  static async getTableById(req, res) {
+    const { id } = req.params
+    try {
+      const table = await TableModel.getTableById(id)
+      return res.status(200).json(table)
+    } catch (error) {
+      console.log(error)
+      return res.status(400).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
+
   static async getTablesByRoomName(req, res) {
     const { room } = req.query
     try {

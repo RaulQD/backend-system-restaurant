@@ -21,6 +21,17 @@ export class TableModel {
     })
     return { tables, countResult: countResults[0]?.count, };
   }
+
+  static async getTableById(uuid) {
+    const [results] = await pool.query('SELECT BIN_TO_UUID(id_table) id, num_table, capacity_table FROM tables WHERE id_table = UUID_TO_BIN(?)', [uuid])
+    if (results.length === 0) {
+      const error = new Error('La mesa no existe')
+      error.statusCode = 404 // Not found
+      throw error
+    }
+    return results[0]
+  }
+
   static async getTablesByRoomName(room_name) {
     const [results] = await pool.query('SELECT BIN_TO_UUID(t.id_table) as id_table, t.num_table, t.capacity_table, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE r.room_name = ? ORDER BY t.num_table ASC;', [room_name])
     if (results.length === 0) {
@@ -65,4 +76,15 @@ export class TableModel {
 
   }
   static async updateTable(id, data) { }
+
+  static async updateTableStatus(id_table, status) {
+    try {
+      await pool.query('UPDATE tables SET status = ? WHERE id_table = UUID_TO_BIN(?)', [status, id_table])
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al actualizar el estado de la mesa')
+    }
+
+  }
+
 }
