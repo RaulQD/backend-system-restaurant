@@ -12,10 +12,10 @@ routes.post('/',
   handleInputErrors, CategoryController.createCategory)
 routes.get('/', CategoryController.getCategories)
 routes.get('/:id',
-  param('id').isUUID().withMessage('Invalid category id'),
+  param('id').isInt().withMessage('Invalid category id'),
   CategoryController.getCategoryById)
 routes.put('/:id',
-  param('id').isUUID().withMessage('Invalid category id'),
+  param('id').isInt().withMessage('Invalid category id'),
   categoryValidation,
   handleInputErrors, CategoryController.updateCategory)
 routes.delete('/:id', CategoryController.deleteCategory)

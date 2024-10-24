@@ -21,9 +21,10 @@ export class EmployeeModel {
     }
     return existingDni;
   }
-  static async findByEmployeeId(uuid) {
-    const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(id_employee) id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = UUID_TO_BIN(?)`, [uuid])
+  static async findByEmployeeId(id) {
+    const [employeeResult] = await pool.query(`SELECT id_employee as id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = ?`, [id])
     const employee = employeeResult[0];
+    console.log('employee',employee.id)
     if (employee.length === 0) {
       const error = new Error('Empleado no encontrado');
       error.statusCode = 404;
@@ -35,7 +36,7 @@ export class EmployeeModel {
 
     let offset = (page - 1) * limit;
 
-    let query = `SELECT BIN_TO_UUID(e.id_employee) id, e.names, e.last_name, e.profile_picture_url, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1`
+    let query = `SELECT id_employee as id, e.names, e.last_name, e.profile_picture_url, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1`
 
     // Consulta para contar el número total de empleados
     let countQuery = `SELECT COUNT(*) as total FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1
@@ -113,12 +114,9 @@ export class EmployeeModel {
       }
     };
   }
-  static async getEmployeeById(uuid) {
+  static async getEmployeeById(id) {
 
-    // if (!uuid) {
-    //   throw new Error('UUID no proporcionado');
-    // }
-    const [employeeResult] = await pool.query(`SELECT BIN_TO_UUID(e.id_employee) id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = UUID_TO_BIN(?)`, [uuid])
+    const [employeeResult] = await pool.query(`SELECT e.id_employee as id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = ?`, [id])
 
     if (employeeResult.length === 0) {
       const error = new Error('Empleado no encontrado');
@@ -144,9 +142,9 @@ export class EmployeeModel {
     }
 
   }
-  static async createEmployee(data, uuid, userId) {
+  static async createEmployee(data, userId) {
     const { names, last_name, dni, email, phone, address, profile_picture_url, hire_date, salary } = data
-    const [employeeResult] = await pool.query(`INSERT INTO employees (id_employee, names, last_name, dni, email, phone, address, profile_picture_url, salary, hire_date, user_id) VALUES (UUID_TO_BIN("${uuid}"), ?, ?, ?, ?, ?, ?, ?, ?, ?, UUID_TO_BIN("${uuid}"))`,
+    const [employeeResult] = await pool.query(`INSERT INTO employees (names, last_name, dni, email, phone, address, profile_picture_url, salary, hire_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [names, last_name, dni, email, phone, address, profile_picture_url, parseFloat(salary), hire_date, userId]);
     return employeeResult;
   }

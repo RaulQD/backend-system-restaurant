@@ -11,20 +11,20 @@ routes.get('/', RoomsController.getAllRooms)
 routes.post('/', roomValidation, handleInputErrors, RoomsController.createRoom)
 routes.get('/:id',
   param('id')
-    .isUUID()
+    .isInt()
     .withMessage('ID de sala inválido'),
   handleInputErrors,
   RoomsController.getRoomById)
 routes.put('/:id',
   param('id')
-    .isUUID()
+    .isInt()
     .withMessage('ID de sala inválido'),
   roomValidation,
   handleInputErrors,
   RoomsController.updateRoom)
 routes.delete('/:id',
   param('id')
-    .isUUID()
+    .isInt()
     .withMessage('ID de sala inválido'),
   handleInputErrors,
   RoomsController.deleteRoom)

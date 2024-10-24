@@ -5,7 +5,7 @@ export class DishesModel {
     let offset = (page - 1) * limit;
 
     // Consulta para obtener los platos
-    let query = `SELECT BIN_TO_UUID(id_dish) id, dishes_name, dishes_description, price, image_url, available, BIN_TO_UUID(c.id_category) AS id_category, c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE 1=1`
+    let query = `SELECT id_dish as id, dishes_name, dishes_description, price, image_url, available, c.id_category AS id_category, c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE 1=1`
 
     // Consulta para contar el número total de platos
     let countQuery = `SELECT COUNT(*) as total FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE 1=1`
@@ -81,7 +81,7 @@ export class DishesModel {
     };
   }
   static async getDishById(id) {
-    const [results] = await pool.query('SELECT BIN_TO_UUID(id_dish) id, dishes_name, dishes_description, price, available, BIN_TO_UUID(c.id_category) AS id_category, c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE id_dish = UUID_TO_BIN(?)', [id])
+    const [results] = await pool.query('SELECT id_dish as id, dishes_name, dishes_description, price, available, c.id_category , c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE id_dish = ?', [id])
     if (results.length === 0) {
       return res.status(404).json({ message: 'Plato no encontrado', status: false })
     }
@@ -102,26 +102,26 @@ export class DishesModel {
   }
   static async createdish({ dishes_name, dishes_description, price, image_url, category_name }) {
     // 1- GET THE UUID OF THE CATEGORY
-    const [categoryResult] = await pool.query('SELECT BIN_TO_UUID(id_category) id FROM category WHERE category_name = ?', [category_name])
+    const [categoryResult] = await pool.query('SELECT id_category as id FROM category WHERE category_name = ?', [category_name])
     if (categoryResult.length === 0) {
       throw new Error('La categoria no existe')
     }
     const [{ id }] = categoryResult
-    // 2- GET THE UUID
-    const [uuidResult] = await pool.query('SELECT UUID() uuid')
-    const [{ uuid }] = uuidResult
+    console.log('id', categoryResult)
     // 3- CHECK IF THE DISH ALREADY EXISTS
     const [existingDish] = await pool.query('SELECT * FROM dishes WHERE dishes_name = ?', [dishes_name])
     if (existingDish.length > 0) {
       throw new Error('El plato ya existe')
     }
+    console.log(existingDish)
     try {
       // 4 - CREATE A NEW DISH
-      await pool.query(`INSERT INTO dishes (id_dish, dishes_name, dishes_description, price, image_url, category_id) VALUES (UUID_TO_BIN("${uuid}"),?,?,?,?,UUID_TO_BIN(?))`, [dishes_name, dishes_description, price, image_url, id])
+      await pool.query(`INSERT INTO dishes (dishes_name, dishes_description, price, image_url, category_id) VALUES (?,?,?,?,?)`, [dishes_name, dishes_description, price, image_url, id])
     } catch (error) {
+      console.log(error)
       throw new Error('Error al crear el plato')
     }
-    const [dishes] = await pool.query('SELECT BIN_TO_UUID(id_dish) id, dishes_name, dishes_description, price, image_url FROM dishes WHERE id_dish = UUID_TO_BIN(?)', [uuid])
+    const [dishes] = await pool.query('SELECT id_dish as id, dishes_name, dishes_description, price, image_url FROM dishes WHERE id_dish = ?', [id])
 
     return dishes[0]
   }

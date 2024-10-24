@@ -12,15 +12,15 @@ const routes = Router();
 
 routes.get('/', validateQueryEmployee, handleInputErrors, EmployeeController.getEmployees);
 routes.get('/:employeeId',
-  param('employeeId').isUUID().withMessage('El id del empleado debe ser un UUID válido'),
+  param('employeeId').isInt().withMessage('El id del empleado debe ser un UUID válido'),
   handleInputErrors,
   EmployeeController.getEmployeeById)
 routes.put('/:employeId',
-  param('employeeId').isUUID().withMessage('El id del empleado debe ser un UUID válido'),
+  param('employeeId').isInt().withMessage('El id del empleado debe ser un UUID válido'),
   handleInputErrors,
   EmployeeController.updateEmployee)
 routes.delete('/:employeeId',
-  param('employeeId').isUUID().withMessage('El id del empleado debe ser un UUID válido'),
+  param('employeeId').isInt().withMessage('El id del empleado debe ser un UUID válido'),
   handleInputErrors,
   EmployeeController.deleteEmployee)
 

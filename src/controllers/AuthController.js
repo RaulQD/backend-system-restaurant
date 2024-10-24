@@ -40,7 +40,7 @@ export class AuthController {
 
     }
     static async createAccount(req, res) {
-        const { dni, email, username, password, role_name } = req.body
+        const { dni, email, username, password, role_name,  } = req.body
 
         try {
 
@@ -51,15 +51,10 @@ export class AuthController {
 
             // 6. Buscar rol por nombre
             const roleResult = await RolModel.findByRolName(role_name);
-            // 3. Generar UUID
-            const [uuidResult] = await pool.query('SELECT UUID() uuid');
-            if (!uuidResult || uuidResult.length === 0) {
-                throw { message: 'Error al generar el UUID', statusCode: 500 };
-            }
-            const [{ uuid }] = uuidResult;
-            console.log(uuid);
+            
             // 4. Crear usuario
-            await UserModel.createUser(username, password, uuid);
+           const user =  await UserModel.createUser(username, password);
+           const userId = user.insertId
             //  5. Crear empleado
             if (!req.file) {
                 return res.status(400).json({ error: 'La imagen del plato es requerida.' });
@@ -69,12 +64,13 @@ export class AuthController {
             })
             const profile_picture_url = result.secure_url;
             // const employeeData = {names, last_name, dni, email, phone, address, profile_picture_url, hire_date, salary}
-            await EmployeeModel.createEmployee({ ...req.body, profile_picture_url }, uuid, uuid);
+            const resultEmployee = await EmployeeModel.createEmployee({ ...req.body, profile_picture_url }, userId);
+            const employeeId = resultEmployee.insertId;
             // 7. Asignar rol al usuario
-            await RolModel.assignRoleToUser(uuid, roleResult[0].id_rol);
+            await RolModel.assignRoleToUser(userId, roleResult[0].id_rol);
             // 8. Obtener el empleado creado
-            console.log('Buscando empleado por UUID:', uuid);
-            const employee = await EmployeeModel.findByEmployeeId(uuid);
+            console.log('Buscando empleado por UUID:', employeeId);
+            const employee = await EmployeeModel.findByEmployeeId(employeeId);
             console.log('Empleado encontrado:', employee);
             return res.status(201).json({ message: 'Cuenta creada exitosamente', status: true, data: employee })
         } catch (error) {

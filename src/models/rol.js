@@ -10,7 +10,7 @@ export class RolModel {
     return roleResult;
   }
 
-  static async assignRoleToUser(uuid, id_rol) {
-    await pool.query('INSERT INTO user_roles (user_id, role_id) VALUES (UUID_TO_BIN(?), ?)', [uuid, id_rol]);
+  static async assignRoleToUser(user_id, id_rol) {
+    await pool.query('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [user_id, id_rol]);
   }
 }

@@ -8,19 +8,20 @@ export class TableController {
     const offset = (pageNumber - 1) * limitNumber
 
     try {
-      const { tables, countResult } = await TableModel.getTables(limitNumber, offset)
+      const { result, countResult } = await TableModel.getTables(limitNumber, offset)
       return res.status(200).json({
-        data: tables,
+        result,
         pagination: {
           page: pageNumber,
           limit: limitNumber,
-          totalResults: tables.length,
+          totalResults: result.length,
           totalPages: Math.ceil(countResult / limitNumber)
         }
       })
     } catch (error) {
       console.log(error)
-      return res.status(400).json({
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
         status: false
       });
@@ -33,7 +34,8 @@ export class TableController {
       return res.status(200).json(table)
     } catch (error) {
       console.log(error)
-      return res.status(400).json({
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
         status: false
       });
@@ -47,7 +49,8 @@ export class TableController {
       return res.status(200).json(tables)
     } catch (error) {
       console.log(error)
-      return res.status(400).json({
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
         status: false
       });
@@ -61,11 +64,12 @@ export class TableController {
       return res.status(201).json({ message: 'Mesa creada exitosamente', status: true, data: table })
     } catch (error) {
       console.log(error)
-      return res.status(400).json({
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
         status: false
       });
     }
   }
-  static async updateTable(req, res) { }
+
 }

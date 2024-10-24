@@ -17,7 +17,7 @@ routes.get('/findTablesByRoom',
   TableController.getTablesByRoomName)
 routes.get('/:id',
   param('id')
-    .isUUID().withMessage('El id de la mesa debe ser un UUID válido'),
+  .isInt().withMessage('El id de la mesa debe ser un número entero'),
   handleInputErrors,
   TableController.getTableById)
 export default routes;
