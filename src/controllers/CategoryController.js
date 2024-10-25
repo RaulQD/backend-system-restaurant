@@ -6,8 +6,7 @@ export class CategoryController {
   static async createCategory(req, res) {
     try {
       const { category_name, category_description } = req.body
-      const [uuidResult] = await pool.query('SELECT UUID() uuid')
-      const [{ uuid }] = uuidResult
+
       // 1- CHECK IF THE CATEGORY ALREADY EXISTS
       const [existingCategory] = await pool.query('SELECT * FROM category WHERE category_name = ?', [category_name])
       if (existingCategory.length > 0) {
@@ -15,14 +14,12 @@ export class CategoryController {
         return res.status(400).json({ message: error.message, status: false })
       }
       // 2 - CREATE A NEW CATEGORY
-      await pool.query(`INSERT INTO category (id_category, category_name, category_description) VALUES ( UUID_TO_BIN("${uuid}"),?, ?)`, [category_name, category_description])
+      const [category] = await pool.query(`INSERT INTO category (category_name, category_description) VALUES (?, ?)`, [category_name, category_description])
+      const categoryId = category[0].insertId
 
       // 3 - GET THE NEWLY CREATED CATEGORY
-      const [dishes] = await pool.query('SELECT BIN_TO_UUID(id_category) id, category_name, category_description FROM category WHERE id_category = UUID_TO_BIN(?)', [uuid])
-      console.log({
-        message: 'Categoría creada exitosamente',
-        data: dishes[0]
-      })
+      const [dishes] = await pool.query('SELECT id_category as id, category_name, category_description FROM category WHERE id_category = ?)', [categoryId])
+
       return res.status(201).json({
         message: 'Categoría creada exitosamente',
         status: true,
@@ -61,6 +58,10 @@ export class CategoryController {
     try {
       const { id } = req.params
       const category = await CategoryModel.getCategoryById(id)
+      if (!category) {
+        const error = new Error('Categoria no encontrada')
+        return res.status(404).json({ message: error.message, status: false })
+      }
       return res.status(200).json(category)
     } catch (error) {
       console.log(error)

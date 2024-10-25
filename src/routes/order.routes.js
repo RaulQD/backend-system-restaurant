@@ -1,10 +1,10 @@
 import Router from 'express';
-import { OrderModel } from '../models/orders.js';
+import { OrderController } from '../controllers/OrderController.js';
 
 const routes = Router();
 
 
-routes.post('/', OrderModel.createOrder)
+routes.post('/', OrderController.createOrder)
 
 
 export default routes;

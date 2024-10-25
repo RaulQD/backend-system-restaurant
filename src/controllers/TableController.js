@@ -1,6 +1,8 @@
 import { TableModel } from "../models/table.js";
 
 export class TableController {
+
+
   static async getTables(req, res) {
     const { page = 1, limit = 10 } = req.query
     const limitNumber = Number(limit)
@@ -31,6 +33,10 @@ export class TableController {
     const { id } = req.params
     try {
       const table = await TableModel.getTableById(id)
+      if (!table) {
+        const error = new Error('Mesa no encontrada')
+        return res.status(404).json({ message: error.message, status: false })
+      }
       return res.status(200).json(table)
     } catch (error) {
       console.log(error)
@@ -62,6 +68,22 @@ export class TableController {
       // CREATE THE TABLE
       const table = await TableModel.createTable(req.body); // Pasar el req.body directamente
       return res.status(201).json({ message: 'Mesa creada exitosamente', status: true, data: table })
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
+
+  static async updateTableStatus(req, res) {
+    const { id } = req.params
+    const { status } = req.body
+    try {
+      await TableModel.updateTableStatus(id, status)
+      res.status(200).json({ message: 'Estado de la mesa actualizado', status: true })
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500

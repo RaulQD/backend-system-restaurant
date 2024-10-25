@@ -107,13 +107,11 @@ export class DishesModel {
       throw new Error('La categoria no existe')
     }
     const [{ id }] = categoryResult
-    console.log('id', categoryResult)
     // 3- CHECK IF THE DISH ALREADY EXISTS
     const [existingDish] = await pool.query('SELECT * FROM dishes WHERE dishes_name = ?', [dishes_name])
     if (existingDish.length > 0) {
       throw new Error('El plato ya existe')
     }
-    console.log(existingDish)
     try {
       // 4 - CREATE A NEW DISH
       await pool.query(`INSERT INTO dishes (dishes_name, dishes_description, price, image_url, category_id) VALUES (?,?,?,?,?)`, [dishes_name, dishes_description, price, image_url, id])

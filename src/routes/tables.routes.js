@@ -20,4 +20,8 @@ routes.get('/:id',
   .isInt().withMessage('El id de la mesa debe ser un número entero'),
   handleInputErrors,
   TableController.getTableById)
+  routes.patch('/:id/status', TableController)
+
+
+
 export default routes;

@@ -22,17 +22,13 @@ export class CategoryModel {
   }
 
   static async getCategoryById(uuid) {
-
     const [result] = await pool.query('SELECT id_category as id, category_name, category_description FROM category WHERE id_category = ?', [uuid])
     const category = result[0]
-    if (category.length === 0) {
-      const error = new Error('La categoria no existe')
-      error.status = 404
-      throw error
-    }
+
     return category
   }
   static async createCategory(category_name, category_description) {
+    
     try {
       await pool.query('INSERT INTO category (category_name, category_description) VALUES (?, ?)', [category_name, category_description])
 

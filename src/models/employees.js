@@ -24,12 +24,6 @@ export class EmployeeModel {
   static async findByEmployeeId(id) {
     const [employeeResult] = await pool.query(`SELECT id_employee as id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = ?`, [id])
     const employee = employeeResult[0];
-    console.log('employee',employee.id)
-    if (employee.length === 0) {
-      const error = new Error('Empleado no encontrado');
-      error.statusCode = 404;
-      throw error;
-    }
     return employee;
   }
   static async getEmployees(keyword, status, page = 1, limit = 10) {
@@ -144,8 +138,7 @@ export class EmployeeModel {
   }
   static async createEmployee(data, userId) {
     const { names, last_name, dni, email, phone, address, profile_picture_url, hire_date, salary } = data
-    const [employeeResult] = await pool.query(`INSERT INTO employees (names, last_name, dni, email, phone, address, profile_picture_url, salary, hire_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [names, last_name, dni, email, phone, address, profile_picture_url, parseFloat(salary), hire_date, userId]);
+    const [employeeResult] = await pool.query(`INSERT INTO employees (names, last_name, dni, email, phone, address, profile_picture_url, salary, hire_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [names, last_name, dni, email, phone, address, profile_picture_url, parseFloat(salary), hire_date, userId]);
     return employeeResult;
   }
 

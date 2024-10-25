@@ -34,7 +34,7 @@ export class DishesController {
     try {
 
       const { dishes_name, dishes_description, price, available, category_name } = req.body
-      console.log(req.user);
+
       // Validación manual de la imagen
       if (!req.file) {
         return res.status(400).json({ error: 'La imagen del plato es requerida.' });
