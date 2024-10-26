@@ -15,7 +15,6 @@ export class UserModel {
   static async createUser(username, password) {
     const hashedPassword = await hashPassword(password)
     const [user] =  await pool.query(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword]);
-    console.log('user:', user);
     return user; // Devuelve el id del usuario creado
   }
   static async findByUser(username) {

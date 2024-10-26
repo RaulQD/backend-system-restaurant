@@ -2,6 +2,10 @@ import { pool } from "../config/mysql.js";
 
 
 export class OrderModel {
+  static async getOrderById(id) {
+    const [results] = await pool.query('SELECT id_order FROM orders WHERE id_order = ?', [id])
+    return results[0]
+  }
 
   static async createOrder(orderData) {
     const { employee_id, table_id, total = 0 } = orderData
@@ -28,7 +32,12 @@ export class OrderModel {
     await db.query("UPDATE orders SET total = ? WHERE id_order = ?", [total, id_order]);
   }
 
-  static async updateStatus(id_order, order_status) {
-    await db.query("UPDATE orders SET order_status = ? WHERE id_order = ?", [order_status, id_order]);
+  static async updateOrderStatus(orderId, order_status){
+    try {
+       await pool.query('UPDATE orders SET order_status = ? WHERE id_order = ?', [order_status, orderId])
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al actualizar el estado de la orden');
+    }
   }
 }

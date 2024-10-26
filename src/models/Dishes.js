@@ -31,15 +31,15 @@ export class DishesModel {
     const totalDishes = countResults[0].total;
     if (totalDishes === 0) {
       if (keyword) {
-        const error = new Error(`No se encontraron empleados con este nombre.`);
+        const error = new Error(`No se encontraron platos con este nombre.`);
         error.statusCode = 404;
         throw error;
       } else if (category) {
-        const error = new Error(`No se encontraron empleados con el estado sugerido.`);
+        const error = new Error(`No se encontraron platos con el estado ${category}`);
         error.statusCode = 404;
         throw error;
       } else {
-        const error = new Error('No se encontraron empleados.');
+        const error = new Error('No se encontraron platos.');
         error.statusCode = 404;
         throw error;
       }

@@ -50,9 +50,14 @@ export class TableModel {
         capacity_table: table.capacity_table,
       }
     })
-
     return tables
   }
+  //FUNCIÓN PARA OBTENER SI LA MESA ESTÁ OCUPADA O NO
+  static async getTableStatus(id) {
+    const [results] = await pool.query('SELECT status FROM tables WHERE id_table = ?', [id])
+    return results[0].status
+  }
+
   static async createTable(data) {
     const { room_name, num_table, capacity_table } = data
     // 1- GET THE UUID OF THE ROOM
@@ -76,9 +81,9 @@ export class TableModel {
   }
   static async updateTable(id, data) { }
 
-  static async updateTableStatus(id_table, status) {
+  static async updateTableStatus(id, status) {
     try {
-      await pool.query('UPDATE tables SET status = ? WHERE id_table = ?', [status, id_table])
+      await pool.query('UPDATE tables SET status = ? WHERE id_table = ?', [status, id])
     } catch (error) {
       console.log(error)
       throw new Error('Error al actualizar el estado de la mesa')
