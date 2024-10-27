@@ -5,6 +5,39 @@ import { OrderModel } from "../models/orders.js";
 import { TableModel } from "../models/table.js";
 
 export class OrderController {
+  static async getOrders(req, res) {
+    try {
+      const orders = await OrderModel.getOrders()
+      return res.status(200).json(orders);
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
+  static async getOrderById(req, res) {
+    const { orderId } = req.params
+    try {
+      const order = await OrderModel.getOrderById(orderId)
+      if (!order) {
+        const error = new Error('Orden no encontrada')
+        return res.status(404).json({ error: error.message, status: false });
+      }
+      const orderItems = await OrderModel.getOrderItems(orderId)
+      const orderData = { ...order, items: orderItems }
+      return res.status(200).json(orderData);
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
 
   static async createOrder(req, res) {
 

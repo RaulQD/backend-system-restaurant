@@ -5,6 +5,8 @@ const routes = Router();
 
 
 routes.post('/', OrderController.createOrder)
+routes.get('/', OrderController.getOrders)
+routes.get('/:orderId', OrderController.getOrderById)
 routes.patch('/:orderId/cancel/:tableId', OrderController.cancelOrder)
 
 
