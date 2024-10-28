@@ -3,7 +3,7 @@ import { pool } from "../config/mysql.js";
 
 export class OrderModel {
   static async getOrders() {
-    const [results] = await pool.query('SELECT * FROM orders')
+    const [results] = await pool.query('SELECT o.id_order, e.names, t.num_table, o.order_status, o.total, o.created_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table')
     return results
   }
 
@@ -37,7 +37,7 @@ export class OrderModel {
   static async getOrderItems(orderId) {
     try {
 
-      const [results] = await pool.query(`SELECT * FROM order_details WHERE order_id = ?`, [orderId])
+      const [results] = await pool.query('SELECT od.id_item, od.quantity, od.price, d.id_dish as id, d.dishes_name FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [orderId])
       return results
     } catch (error) {
       console.log(error)

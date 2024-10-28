@@ -23,6 +23,9 @@ export class DishesController {
     const { id } = req.params
     try {
       const dish = await DishesModel.getDishById(id);
+      if(!dish){
+        return res.status(404).json({ message: 'Plato no encontrado', status: false })
+      }
       return res.status(200).json({ status: true, data: dish })
     } catch (error) {
       console.log(error)

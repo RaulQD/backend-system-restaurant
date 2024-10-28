@@ -15,7 +15,17 @@ export class OrderController {
       // ITERAR SOBRE LAS ORDENES Y OBTENER LOS DETALLES CORRESPONDIENTES
       for (const order of orders) {
         const orderItems = await OrderModel.getOrderItems(order.id_order)
-        orderData.push({ ...order, items: orderItems })
+        const itemsWithMoreInfo = orderItems.map(item => ({
+          id_item: item.id_item,
+          dish: {
+            id: item.id,
+            name: item.dishes_name
+          },
+          quantity: item.quantity,
+          price: item.price,
+
+        }))
+        orderData.push({ ...order, items: itemsWithMoreInfo })
       }
       return res.status(200).json(orderData);
     } catch (error) {
@@ -97,29 +107,31 @@ export class OrderController {
       });
     }
   }
-  static async updateOrderItems(req, res) {
-    const { orderId } = req.params
-    const newItems = req.body
+  //METODO PARA AGREGAR ITEMS A UNA ORDEN YA EXISTENTE
+  static async addItemToOrder(req, res) {
+    const {  dish_id, quantity, price } = req.body
+    const order_id = req.params.order_id
     //VALIDAR SI LA ORDEN EXISTE
-    const orderExist = await OrderModel.getOrderById(orderId)
+    const orderExist = await OrderModel.getOrderById(order_id)
+    console.log('Orden encontrada:', orderExist); // Debug: Ver qué orden se encuentra
     if (!orderExist) {
       return res.status(404).json({ message: 'Orden no encontrada', status: false });
     }
-    //Agregar un nuevo item a la orden ya existente
     try {
-      let total = newItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
-      for (const item of newItems) {
-        const orderItemData = {
-          order_id: orderId,
-          dish_id: item.dish_id,
-          quantity: item.quantity,
-          price: item.price
-        }
-        await OrderModel.addOrderItems(orderItemData)
+      //INSERTAR EL NUEVO ITEM EN LA TABLA DE ORDER_DETAILS
+      const orderItemData = {
+        order_id,
+        dish_id,
+        quantity,
+        price
       }
+      await OrderModel.addOrderItems(orderItemData)
+      //RECALCULAR EL TOTAL DE LA ORDEN
+      const orderItems = await OrderModel.getOrderItems(order_id)
+      const total = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
       //ACTUALIZAR EL TOTAL DE LA ORDEN
-      await OrderModel.updateTotal(orderId, total)
-      return res.status(200).json({ message: 'Items agregados a la orden exitosamente', status: true });
+      await OrderModel.updateTotal(order_id, total)
+      return res.status(201).json({ message: 'Item agregado a la orden exitosamente', newTotal: total,order:{...orders, items: orderItems} });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
