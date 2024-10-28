@@ -8,7 +8,16 @@ export class OrderController {
   static async getOrders(req, res) {
     try {
       const orders = await OrderModel.getOrders()
-      return res.status(200).json(orders);
+      if (orders.length === 0) {
+        return res.status(404).json({ message: 'No hay ordenes', status: false });
+      }
+      let orderData = []
+      // ITERAR SOBRE LAS ORDENES Y OBTENER LOS DETALLES CORRESPONDIENTES
+      for (const order of orders) {
+        const orderItems = await OrderModel.getOrderItems(order.id_order)
+        orderData.push({ ...order, items: orderItems })
+      }
+      return res.status(200).json(orderData);
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
@@ -88,6 +97,39 @@ export class OrderController {
       });
     }
   }
+  static async updateOrderItems(req, res) {
+    const { orderId } = req.params
+    const newItems = req.body
+    //VALIDAR SI LA ORDEN EXISTE
+    const orderExist = await OrderModel.getOrderById(orderId)
+    if (!orderExist) {
+      return res.status(404).json({ message: 'Orden no encontrada', status: false });
+    }
+    //Agregar un nuevo item a la orden ya existente
+    try {
+      let total = newItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+      for (const item of newItems) {
+        const orderItemData = {
+          order_id: orderId,
+          dish_id: item.dish_id,
+          quantity: item.quantity,
+          price: item.price
+        }
+        await OrderModel.addOrderItems(orderItemData)
+      }
+      //ACTUALIZAR EL TOTAL DE LA ORDEN
+      await OrderModel.updateTotal(orderId, total)
+      return res.status(200).json({ message: 'Items agregados a la orden exitosamente', status: true });
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
+
   static async cancelOrder(req, res) {
     const { orderId, tableId } = req.params
 

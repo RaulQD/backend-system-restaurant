@@ -3,7 +3,7 @@ import { pool } from "../config/mysql.js";
 
 export class OrderModel {
   static async getOrders() {
-    const [results] = await pool.query('SELECT o.id_order AS order_id, e.names AS waiter_name, o.table_id, o.status, o.created_at, od.id_order_item, od.quantity, od.price, d.dishes_name FROM  orders o JOIN employees e ON o.employee_id = e.id_employee JOIN order_details od ON o.id_order = od.order_id JOIN  dishes d ON od.dish_id = d.id_dish ORDER BY o.created_at DESC')
+    const [results] = await pool.query('SELECT * FROM orders')
     return results
   }
 
@@ -23,6 +23,7 @@ export class OrderModel {
 
     }
   }
+
   static async addOrderItems(orderItemData) {
     const { order_id, dish_id, quantity, price } = orderItemData
     try {
@@ -32,9 +33,11 @@ export class OrderModel {
       throw new Error('Error al agregar items a la orden')
     }
   }
+  
   static async getOrderItems(orderId) {
     try {
-      const [results] = await pool.query('SELECT * FROM order_details WHERE order_id = ?', [orderId])
+
+      const [results] = await pool.query(`SELECT * FROM order_details WHERE order_id = ?`, [orderId])
       return results
     } catch (error) {
       console.log(error)
