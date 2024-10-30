@@ -152,7 +152,6 @@ export class OrderController {
           dish_id,
           quantity,
           price,
-          
         }
         await OrderModel.addOrderItems(orderItemData)
         //AGREGAR EL NUEVO ITEM AL ARRAY DE ITEMS DE LA ORDEN
