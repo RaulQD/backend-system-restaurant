@@ -46,7 +46,17 @@ export class OrderController {
         return res.status(404).json({ error: error.message, status: false });
       }
       const orderItems = await OrderModel.getOrderItems(orderId)
-      const orderData = { ...order, items: orderItems }
+      const itemsWithMoreInfo = orderItems.map(item => ({
+        id_item: item.id_item,
+        dish: {
+          id: item.id,
+          name: item.dishes_name
+        },
+        quantity: item.quantity,
+        price: item.price,
+      }))
+
+      const orderData = { ...order, items: itemsWithMoreInfo }
       return res.status(200).json(orderData);
     } catch (error) {
       console.log(error)
@@ -85,13 +95,22 @@ export class OrderController {
       const orderData = { employee_id, table_id, total }
       const order = await OrderModel.createOrder(orderData)
       for (const item of items) {
-        const orderItemData = {
-          order_id: order,
-          dish_id: item.dish_id,
-          quantity: item.quantity,
-          price: item.price
+        //VERIFICAR SI EL ITEM YA EXISTE EN LA ORDEn
+        const orderItems = await OrderModel.getOrderItems(order)
+        const existingItem = orderItems.find(orderItem => orderItem.dish_id === item.dish_id)
+        if (existingItem) {
+          //SI EL ITEM YA EXISTE, ACTUALIZAR LA CANTIDAD
+          existingItem.quantity += item.quantity
+          await OrderModel.updateOrderItemQuantity(order, item.dish_id, existingItem.quantity)
+        } else {
+          const orderItemData = {
+            order_id: order,
+            dish_id: item.dish_id,
+            quantity: item.quantity,
+            price: item.price
+          }
+          await OrderModel.addOrderItems(orderItemData)
         }
-        await OrderModel.addOrderItems(orderItemData)
       }
       //CAMBIAR EL ESTADO DE LA MESA A OCUPADO
       await TableModel.updateTableStatus(table_id, 'Ocupado')
@@ -109,29 +128,43 @@ export class OrderController {
   }
   //METODO PARA AGREGAR ITEMS A UNA ORDEN YA EXISTENTE
   static async addItemToOrder(req, res) {
-    const {  dish_id, quantity, price } = req.body
-    const order_id = req.params.order_id
+    const { order_id, dish_id, quantity, price } = req.body
     //VALIDAR SI LA ORDEN EXISTE
-    const orderExist = await OrderModel.getOrderById(order_id)
-    console.log('Orden encontrada:', orderExist); // Debug: Ver qué orden se encuentra
-    if (!orderExist) {
+    const order = await OrderModel.getOrderById(order_id)
+    console.log('Orden encontrada:', order); // Debug: Ver qué orden se encuentra
+    if (!order) {
       return res.status(404).json({ message: 'Orden no encontrada', status: false });
     }
     try {
-      //INSERTAR EL NUEVO ITEM EN LA TABLA DE ORDER_DETAILS
-      const orderItemData = {
-        order_id,
-        dish_id,
-        quantity,
-        price
-      }
-      await OrderModel.addOrderItems(orderItemData)
-      //RECALCULAR EL TOTAL DE LA ORDEN
+      //VALIDAR SI EL ITEM YA EXISTE EN LA ORDEN PARA ACTUALIZAR LA CANTIDAD
       const orderItems = await OrderModel.getOrderItems(order_id)
+      console.log('Items de la orden:', orderItems); // Debug: Ver qué items se encuentran
+      const existingItem = orderItems.find(item => item.dish_id === dish_id)
+      console.log('Item encontrado:', existingItem); // Debug: Ver qué item se encuentra
+      if (existingItem) {
+        //ACTUALIZAR LA CANTIDAD DEL ITEM
+        existingItem.quantity += quantity
+        await OrderModel.updateOrderItemQuantity(order_id, dish_id, existingItem.quantity)
+      } else {
+        //INSERTAR EL NUEVO ITEM EN LA TABLA DE ORDER_DETAILS
+        const orderItemData = {
+          order_id,
+          dish_id,
+          quantity,
+          price,
+          
+        }
+        await OrderModel.addOrderItems(orderItemData)
+        //AGREGAR EL NUEVO ITEM AL ARRAY DE ITEMS DE LA ORDEN
+        orderItems.push(orderItemData)
+      }
+ 
       const total = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
       //ACTUALIZAR EL TOTAL DE LA ORDEN
       await OrderModel.updateTotal(order_id, total)
-      return res.status(201).json({ message: 'Item agregado a la orden exitosamente', newTotal: total,order:{...orders, items: orderItems} });
+
+      // res.send('Item agregado a la orden exitosamente');
+      return res.status(201).json({ message: 'Item agregado a la orden exitosamente', newTotal: total, order: { ...order, items: orderItems } });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
