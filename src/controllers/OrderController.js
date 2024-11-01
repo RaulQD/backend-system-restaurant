@@ -157,7 +157,7 @@ export class OrderController {
         //AGREGAR EL NUEVO ITEM AL ARRAY DE ITEMS DE LA ORDEN
         orderItems.push(orderItemData)
       }
- 
+
       const total = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
       //ACTUALIZAR EL TOTAL DE LA ORDEN
       await OrderModel.updateTotal(order_id, total)
@@ -173,7 +173,27 @@ export class OrderController {
       });
     }
   }
-
+  static async updateOrderStatus(req, res) {
+    const { orderId } = req.params
+    const { order_status } = req.body
+    try {
+      const order = await OrderModel.getOrderById(orderId)
+      if (!order) {
+        const error = new Error('Orden no encontrada')
+        return res.status(404).json({ message: error.message, status: false });
+      }
+      //ACTUALIZAR EL ESTADO DE LA ORDEN
+      await OrderModel.updateOrderStatus(orderId, order_status)
+      return res.status(200).json({ message: 'Estado de la orden actualizado exitosamente', status: true });
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
   static async cancelOrder(req, res) {
     const { orderId, tableId } = req.params
 
@@ -194,10 +214,14 @@ export class OrderController {
       //   const error = new Error('No tienes permisos para cancelar esta orden')
       //   return res.status(403).json({ error: error.message, status: false });
       // }
-      //CAMBIAR EL ESTADO DE LA ORDEN A CANCELADO
-      await OrderModel.updateOrderStatus(orderId, 'CANCELADO')
-      //CAMBIAR EL ESTADO DE LA MESA A DISPONIBLE
-      await TableModel.updateTableStatus(tableId, 'Disponible')
+
+      //USAR PROMISE.ALL PARA EJECUTAR VARIAS CONSULTAS ASÍNCRONAS DE FORMA SIMULTÁNEA
+      await Promise.all([
+        //CAMBIAR EL ESTADO DE LA ORDEN A CANCELADO
+        await OrderModel.updateOrderStatus(orderId, 'CANCELADO'),
+        //CAMBIAR EL ESTADO DE LA MESA A DISPONIBLE
+        await TableModel.updateTableStatus(tableId, 'Disponible')
+      ])
 
       return res.status(200).json({ message: 'Orden cancelada exitosamente', status: true });
     } catch (error) {

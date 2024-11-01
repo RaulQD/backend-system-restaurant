@@ -8,6 +8,8 @@ routes.post('/', OrderController.createOrder)
 routes.post('/add-item', OrderController.addItemToOrder)
 routes.get('/', OrderController.getOrders)
 routes.get('/:orderId', OrderController.getOrderById)
+routes.patch('/:orderId/status', OrderController.updateOrderStatus)
 routes.patch('/:orderId/cancel/:tableId', OrderController.cancelOrder)
+
 
 export default routes;
