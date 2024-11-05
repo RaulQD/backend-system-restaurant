@@ -15,10 +15,10 @@ export class CategoryController {
       }
       // 2 - CREATE A NEW CATEGORY
       const [category] = await pool.query(`INSERT INTO category (category_name, category_description) VALUES (?, ?)`, [category_name, category_description])
-      const categoryId = category[0].insertId
+      const categoryId = category.insertId
 
       // 3 - GET THE NEWLY CREATED CATEGORY
-      const [dishes] = await pool.query('SELECT id_category as id, category_name, category_description FROM category WHERE id_category = ?)', [categoryId])
+      const [dishes] = await pool.query('SELECT id_category as id, category_name, category_description FROM category WHERE id_category = ?', [categoryId])
 
       return res.status(201).json({
         message: 'Categoría creada exitosamente',
