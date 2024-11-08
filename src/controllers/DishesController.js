@@ -9,7 +9,7 @@ export class DishesController {
 
     try {
       const dishesData = await DishesModel.getDishes(keyword, category, pageNumber, limitNumber)
-      return res.status(200).json(dishesData)
+      return res.status(200).json(dishesData || [])
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
@@ -23,7 +23,7 @@ export class DishesController {
     const { id } = req.params
     try {
       const dish = await DishesModel.getDishById(id);
-      if(!dish){
+      if (!dish) {
         return res.status(404).json({ message: 'Plato no encontrado', status: false })
       }
       return res.status(200).json({ status: true, data: dish })
