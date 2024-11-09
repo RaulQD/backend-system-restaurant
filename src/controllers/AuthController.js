@@ -40,7 +40,7 @@ export class AuthController {
 
     }
     static async createAccount(req, res) {
-        const { dni, email, username, password, role_name,  } = req.body
+        const { dni, email, username, password, role_name, } = req.body
 
         try {
 
@@ -51,10 +51,10 @@ export class AuthController {
 
             // 6. Buscar rol por nombre
             const roleResult = await RolModel.findByRolName(role_name);
-            
+
             // 4. Crear usuario
-           const user =  await UserModel.createUser(username, password);
-           const userId = user.insertId
+            const user = await UserModel.createUser(username, password);
+            const userId = user.insertId
             //  5. Crear empleado
             if (!req.file) {
                 return res.status(400).json({ error: 'La imagen del plato es requerida.' });
@@ -85,12 +85,15 @@ export class AuthController {
     static async getProfile(req, res) {
         try {
             const { id } = req.user
-          const user =  await UserModel.findByUserId(id)
+            const user = await UserModel.findByUserId(id)
             const employee = {
                 id: user.id,
                 username: user.username,
-                full_name: `${user.names} ${user.last_name}`,
-                profile_picture_url: user.profile_picture_url,
+                employee: {
+                    id_employee: user.id_employee,
+                    full_name: `${user.names} ${user.last_name}`,
+                    profile_picture_url: user.profile_picture_url,
+                },
                 role: {
                     name: user.role_name
                 }

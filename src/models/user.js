@@ -14,7 +14,7 @@ export class UserModel {
   }
   static async createUser(username, password) {
     const hashedPassword = await hashPassword(password)
-    const [user] =  await pool.query(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword]);
+    const [user] = await pool.query(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword]);
     return user; // Devuelve el id del usuario creado
   }
   static async findByUser(username) {
@@ -37,7 +37,7 @@ export class UserModel {
   }
 
   static async findByUserId(userId) {
-    const [user] = await pool.query('SELECT u.id_user as id, u.username, e.names, e.last_name, e.profile_picture_url ,r.role_name FROM users u JOIN employees e ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE u.id_user = ?', [userId])
+    const [user] = await pool.query('SELECT u.id_user as id, u.username, e.id_employee, e.names, e.last_name, e.profile_picture_url ,r.role_name FROM users u JOIN employees e ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE u.id_user = ?', [userId])
     const userResult = user[0]
     if (userResult.length === 0) {
       const error = new Error('Usuario no encontrado')
