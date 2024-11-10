@@ -13,10 +13,10 @@ export class OrderModel {
   }
 
   static async createOrder(orderData) {
-    const { employee_id, table_id, total = 0 } = orderData
+    const { employee_id, table_id } = orderData
     try {
-      const [result] = await pool.query('INSERT INTO orders (employee_id, table_id, total) VALUES (?,?,?)', [employee_id, table_id, total])
-      return result.insertId
+      const [result] = await pool.query('INSERT INTO orders (employee_id, table_id, total) VALUES (?,?,0)', [employee_id, table_id])
+      return result
     } catch (error) {
       console.log(error)
       throw new Error('Error al crear la orden')
@@ -25,19 +25,18 @@ export class OrderModel {
   }
 
   static async addOrderItems(orderItemData) {
-    const { order_id, dish_id, quantity, price } = orderItemData
+    const { order_id, dish_id, quantity } = orderItemData
     try {
-      await pool.query('INSERT INTO order_details (order_id, dish_id, quantity, price) VALUES (?,?,?,?)', [order_id, dish_id, quantity, price])
+      await pool.query('INSERT INTO order_details (order_id, dish_id, quantity) VALUES (?,?,?)', [order_id, dish_id, quantity])
     } catch (error) {
       console.log(error)
       throw new Error('Error al agregar items a la orden')
     }
   }
-  
+
   static async getOrderItems(orderId) {
     try {
-
-      const [results] = await pool.query('SELECT od.id_item, od.quantity, od.price, d.id_dish as dish_id, d.dishes_name FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [orderId])
+      const [results] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish as dish_id, d.dishes_name FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [orderId])
       return results
     } catch (error) {
       console.log(error)
@@ -46,7 +45,7 @@ export class OrderModel {
   }
   static async getOrderItem(orderId, dishId) {
     try {
-      const [results] = await pool.query('SELECT od.id_item, od.quantity, od.price, d.id_dish as dish_id, d.dishes_name FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ? AND od.dish_id = ?', [orderId, dishId])
+      const [results] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish as dish_id, d.dishes_name FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ? AND od.dish_id = ?', [orderId, dishId])
       return results[0]
     } catch (error) {
       console.log(error)
@@ -54,7 +53,12 @@ export class OrderModel {
     }
   }
   static async updateTotal(id_order, total) {
-    await pool.query("UPDATE orders SET total = ? WHERE id_order = ?", [total, id_order]);
+    try {
+      await pool.query("UPDATE orders SET total = ? WHERE id_order = ?", [total, id_order]);
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al actualizar el total de la orden');
+    }
   }
 
   static async updateOrderStatus(orderId, order_status) {

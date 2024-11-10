@@ -69,7 +69,6 @@ export class OrderController {
   }
 
   static async createOrder(req, res) {
-
     const { employee_id, table_id, items } = req.body
     const employeeId = await EmployeeModel.findByEmployeeId(employee_id)
     if (!employeeId) {
@@ -90,32 +89,49 @@ export class OrderController {
     }
 
     try {
-      // Crear los items de la orden
-      let total = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
-      const orderData = { employee_id, table_id, total }
+
+      //CREAR LA ORDEN
+      const orderData = { employee_id, table_id }
       const order = await OrderModel.createOrder(orderData)
+      const orderId = order.insertId
+      let totalAmout = 0 // Inicializar el total en 0      
+      //AGREGAR LOS ITEMS A LA ORDEN
       for (const item of items) {
-        //VERIFICAR SI EL ITEM YA EXISTE EN LA ORDEn
-        const orderItems = await OrderModel.getOrderItems(order)
+        //VERIFICAR SI EL PLATO EXISTE
+        const dish = await DishesModel.getDishById(item.dish_id)
+        if (!dish) {
+          const error = new Error('Plato no encontrado')
+          return res.status(404).json({ message: error.message, status: false });
+        }
+        //CALCULAR EL PRECIO TOTAL DEL ITEM
+        const itemTotal = dish.price * item.quantity
+        totalAmout += itemTotal
+        //VERIFICAR SI EL ITEM YA EXISTE EN LA ORDEN
+        const orderItems = await OrderModel.getOrderItems(orderId)
         const existingItem = orderItems.find(orderItem => orderItem.dish_id === item.dish_id)
+
         if (existingItem) {
           //SI EL ITEM YA EXISTE, ACTUALIZAR LA CANTIDAD
           existingItem.quantity += item.quantity
           await OrderModel.updateOrderItemQuantity(order, item.dish_id, existingItem.quantity)
         } else {
+          //SI EL ITEM NO EXISTE, AGREGARLO A LA ORDEN
           const orderItemData = {
-            order_id: order,
+            order_id: orderId,
             dish_id: item.dish_id,
             quantity: item.quantity,
-            price: item.price
           }
+          //AGREGAR EL ITEM A LA ORDEN
           await OrderModel.addOrderItems(orderItemData)
         }
       }
+      //ACTUALIZAR EL TOTAL DE LA ORDEN
+      await OrderModel.updateTotal(orderId, totalAmout)
       //CAMBIAR EL ESTADO DE LA MESA A OCUPADO
       await TableModel.updateTableStatus(table_id, 'Ocupado')
 
-      res.status(201).json({ message: 'Orden creada exitosamente', statu: true, order });
+
+      return res.status(201).json({ message: 'Orden creada exitosamente', statu: true, order });
 
     } catch (error) {
       console.log(error)
@@ -224,6 +240,23 @@ export class OrderController {
       ])
 
       return res.status(200).json({ message: 'Orden cancelada exitosamente', status: true });
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
+  static async getOrderItems(req, res) {
+    const { orderId } = req.params
+    try {
+      const orderItems = await OrderModel.getOrderItems(orderId)
+      if (!orderItems || orderItems.length === 0) {
+        return res.status(404).json({ message: 'No hay items en la orden', status: false });
+      }
+      return res.status(200).json({ message: 'Items de la orden obtenidos', status: true, items: orderItems });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
