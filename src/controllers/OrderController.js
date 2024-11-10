@@ -119,7 +119,9 @@ export class OrderController {
           const orderItemData = {
             order_id: orderId,
             dish_id: item.dish_id,
+            dish_name: item.dish_name,
             quantity: item.quantity,
+            price: item.price
           }
           //AGREGAR EL ITEM A LA ORDEN
           await OrderModel.addOrderItems(orderItemData)
@@ -130,8 +132,7 @@ export class OrderController {
       //CAMBIAR EL ESTADO DE LA MESA A OCUPADO
       await TableModel.updateTableStatus(table_id, 'Ocupado')
 
-
-      return res.status(201).json({ message: 'Orden creada exitosamente', statu: true, order });
+      return res.status(201).json({ message: 'Orden creada exitosamente', statu: true, order: { ...order, id_order: orderId } });
 
     } catch (error) {
       console.log(error)
@@ -249,21 +250,21 @@ export class OrderController {
       });
     }
   }
-  static async getOrderItems(req, res) {
-    const { orderId } = req.params
-    try {
-      const orderItems = await OrderModel.getOrderItems(orderId)
-      if (!orderItems || orderItems.length === 0) {
-        return res.status(404).json({ message: 'No hay items en la orden', status: false });
-      }
-      return res.status(200).json({ message: 'Items de la orden obtenidos', status: true, items: orderItems });
-    } catch (error) {
-      console.log(error)
-      const statusCode = error.statusCode || 500
-      return res.status(statusCode).json({
-        message: error.message, // Mostrar mensaje de error
-        status: false
-      });
-    }
-  }
+  // static async getOrderItemsByOrderId(req, res) {
+  //   const { orderId } = req.params
+  //   try {
+  //     const orderItems = await OrderModel.getOrderItemsByOrderId(orderId)
+  //     if (!orderItems || orderItems.length === 0) {
+  //       return res.status(404).json({ message: 'No hay items en la orden', status: false });
+  //     }
+  //     return res.status(200).json({ message: 'Items de la orden obtenidos', status: true, items: orderItems });
+  //   } catch (error) {
+  //     console.log(error)
+  //     const statusCode = error.statusCode || 500
+  //     return res.status(statusCode).json({
+  //       message: error.message, // Mostrar mensaje de error
+  //       status: false
+  //     });
+  //   }
+  // }
 }
