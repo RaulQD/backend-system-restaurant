@@ -220,6 +220,19 @@ export class OrderController {
         const error = new Error('Orden no encontrada')
         return res.status(404).json({ message: error.message, status: false });
       }
+      //VALIDAR SI LA MESA PERTENECE A LA ORDEN
+      if (order.table_id !== tableId) {
+        const error = new Error('La mesa no pertenece a la orden')
+        return res.status(400).json({ error: error.message, status: false });
+      }
+
+      //VALIDAR SI LA MESA EXISTE
+      const table = await TableModel.getTableById(tableId)
+      if (!table) {
+        const error = new Error('Mesa no encontrada')
+        return res.status(404).json({ error: error.message, status: false });
+      }
+
       //VALIDAR SI LA ORDEN YA ESTÁ CANCELADA O COMPLETADA
       if (order.order_status === 'CANCELADO' || order.order_status === 'COMPLETADO') {
         const error = new Error('La orden ya está cancelada o completada')
@@ -235,9 +248,9 @@ export class OrderController {
       //USAR PROMISE.ALL PARA EJECUTAR VARIAS CONSULTAS ASÍNCRONAS DE FORMA SIMULTÁNEA
       await Promise.all([
         //CAMBIAR EL ESTADO DE LA ORDEN A CANCELADO
-        await OrderModel.updateOrderStatus(orderId, 'CANCELADO'),
+        OrderModel.updateOrderStatus(orderId, 'CANCELADO'),
         //CAMBIAR EL ESTADO DE LA MESA A DISPONIBLE
-        await TableModel.updateTableStatus(tableId, 'Disponible')
+        TableModel.updateTableStatus(tableId, 'Disponible')
       ])
 
       return res.status(200).json({ message: 'Orden cancelada exitosamente', status: true });
