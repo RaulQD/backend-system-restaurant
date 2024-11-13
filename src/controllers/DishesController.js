@@ -26,7 +26,7 @@ export class DishesController {
       if (!dish) {
         return res.status(404).json({ message: 'Plato no encontrado', status: false })
       }
-      return res.status(200).json({ status: true, data: dish })
+      return res.status(200).json(dish)
     } catch (error) {
       console.log(error)
       return res.status(500).json({ message: 'Internal server error' })

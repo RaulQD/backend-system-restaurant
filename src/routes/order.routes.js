@@ -6,7 +6,7 @@ const routes = Router();
 
 routes.post('/', OrderController.createOrder)
 routes.post('/add-item', OrderController.addItemToOrder)
-routes.get('/', OrderController.getOrders)
+routes.get('/', OrderController.getOrdersForKitchen)
 routes.get('/:orderId', OrderController.getOrderById)
 // routes.get('/:orderId/items', OrderController.getOrderItemsByOrderId)
 routes.patch('/:orderId/status', OrderController.updateOrderStatus)

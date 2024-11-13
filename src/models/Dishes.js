@@ -81,11 +81,11 @@ export class DishesModel {
     };
   }
   static async getDishById(id) {
-    const [results] = await pool.query('SELECT d.id_dish as id, dishes_name, dishes_description, price, available, c.id_category , c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE id_dish = ?', [id])
+    const [results] = await pool.query('SELECT id_dish , dishes_name, dishes_description, price, available, c.id_category , c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE id_dish = ?', [id])
     
     const dishData = results[0];
     const response = {
-      id: dishData.id,
+      id_dish: dishData.id_dish,
       dishes_name: dishData.dishes_name,
       dishes_description: dishData.dishes_description,
       price: dishData.price,

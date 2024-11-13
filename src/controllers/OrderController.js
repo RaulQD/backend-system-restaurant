@@ -11,19 +11,16 @@ export class OrderController {
       if (orders.length === 0) {
         return res.status(404).json({ message: 'No hay ordenes', status: false });
       }
-      let orderData = []
+      const orderData = []
       // ITERAR SOBRE LAS ORDENES Y OBTENER LOS DETALLES CORRESPONDIENTES
       for (const order of orders) {
         const orderItems = await OrderModel.getOrderItems(order.id_order)
         const itemsWithMoreInfo = orderItems.map(item => ({
           id_item: item.id_item,
-          dish: {
-            id: item.id,
-            name: item.dishes_name
-          },
+          dish_id: item.dish_id,
+          dishes_name: item.dishes_name,
           quantity: item.quantity,
-          price: item.price,
-
+          price: item.unit_price,
         }))
         orderData.push({ ...order, items: itemsWithMoreInfo })
       }
@@ -37,6 +34,39 @@ export class OrderController {
       });
     }
   }
+  static async getOrdersForKitchen(req, res) {
+    try {
+      const orders = await OrderModel.getOrdersByStatus(['pendiente', 'en preparación'])
+      if (orders.length === 0) {
+        const error = new Error('No hay ordenes pendientes')
+        return res.status(404).json({ error: error.message, status: false });
+      }
+      //ITERAR SOBRE LAS ORDENES Y OBTENER LOS DETALLES CORRESPONDIENTES
+      const orderWithDetails = []
+      for (const order of orders) {
+        const orderItems = await OrderModel.getOrderItems(order.id_order)
+        const itemsWithMoreInfo = orderItems.map(item => ({
+          id_item: item.id_item,
+          dish_id: item.dish_id,
+          dishes_name: item.dishes_name,  // Nombre del plato
+          quantity: item.quantity,
+          unit_price: item.unit_price,  // Precio unitario del plato
+          subtotal: item.subtotal,     // Subtotal calculado
+          special_requests: item.special_requests  // Peticiones especiales
+        }))
+        orderWithDetails.push({ ...order, items: itemsWithMoreInfo })
+      }
+      return res.status(200).json(orderWithDetails);
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
+
   static async getOrderById(req, res) {
     const { orderId } = req.params
     try {
@@ -103,9 +133,11 @@ export class OrderController {
           const error = new Error('Plato no encontrado')
           return res.status(404).json({ message: error.message, status: false });
         }
-        //CALCULAR EL PRECIO TOTAL DEL ITEM
-        const itemTotal = dish.price * item.quantity
-        totalAmout += itemTotal
+        //OBTENER EL PRECIO UNITARIO Y CALCULAR EL SUBTOTAL
+        const unitPrice = dish.price
+        const subtotal = unitPrice * item.quantity
+        totalAmout += subtotal
+
         //VERIFICAR SI EL ITEM YA EXISTE EN LA ORDEN
         const orderItems = await OrderModel.getOrderItems(orderId)
         const existingItem = orderItems.find(orderItem => orderItem.dish_id === item.dish_id)
@@ -113,15 +145,17 @@ export class OrderController {
         if (existingItem) {
           //SI EL ITEM YA EXISTE, ACTUALIZAR LA CANTIDAD
           existingItem.quantity += item.quantity
-          await OrderModel.updateOrderItemQuantity(order, item.dish_id, existingItem.quantity)
+          existingItem.subtotal += subtotal
+          await OrderModel.updateOrderItemQuantity(order, item.dish_id, existingItem.quantity, existingItem.subtotal)
         } else {
           //SI EL ITEM NO EXISTE, AGREGARLO A LA ORDEN
           const orderItemData = {
             order_id: orderId,
             dish_id: item.dish_id,
-            dish_name: item.dish_name,
             quantity: item.quantity,
-            price: item.price
+            unit_price: unitPrice,
+            subtotal,
+            special_requests: item.special_requests || ''
           }
           //AGREGAR EL ITEM A LA ORDEN
           await OrderModel.addOrderItems(orderItemData)
