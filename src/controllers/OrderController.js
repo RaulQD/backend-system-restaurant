@@ -1,5 +1,6 @@
 import { DishesModel } from "../models/Dishes.js";
 import { EmployeeModel } from "../models/employees.js";
+import { OrderDetailsModel } from "../models/orderDetails.js";
 // import { OrderItemsModel } from "../models/orderItems.js";
 import { OrderModel } from "../models/orders.js";
 import { TableModel } from "../models/table.js";
@@ -14,7 +15,7 @@ export class OrderController {
       const orderData = []
       // ITERAR SOBRE LAS ORDENES Y OBTENER LOS DETALLES CORRESPONDIENTES
       for (const order of orders) {
-        const orderItems = await OrderModel.getOrderItems(order.id_order)
+        const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
         const itemsWithMoreInfo = orderItems.map(item => ({
           id_item: item.id_item,
           dish_id: item.dish_id,
@@ -44,7 +45,7 @@ export class OrderController {
       //ITERAR SOBRE LAS ORDENES Y OBTENER LOS DETALLES CORRESPONDIENTES
       const orderWithDetails = []
       for (const order of orders) {
-        const orderItems = await OrderModel.getOrderItems(order.id_order)
+        const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
         const itemsWithMoreInfo = orderItems.map(item => ({
           id_item: item.id_item,
           dish_id: item.dish_id,
@@ -75,7 +76,7 @@ export class OrderController {
         const error = new Error('Orden no encontrada')
         return res.status(404).json({ error: error.message, status: false });
       }
-      const orderItems = await OrderModel.getOrderItems(orderId)
+      const orderItems = await OrderDetailsModel.getOrderItems(orderId)
       const itemsWithMoreInfo = orderItems.map(item => ({
         id_item: item.id_item,
         dish: {
@@ -119,7 +120,6 @@ export class OrderController {
     }
 
     try {
-
       //CREAR LA ORDEN
       const orderData = { employee_id, table_id }
       const order = await OrderModel.createOrder(orderData)
@@ -139,7 +139,7 @@ export class OrderController {
         totalAmout += subtotal
 
         //VERIFICAR SI EL ITEM YA EXISTE EN LA ORDEN
-        const orderItems = await OrderModel.getOrderItems(orderId)
+        const orderItems = await OrderDetailsModel.getOrderItems(orderId)
         const existingItem = orderItems.find(orderItem => orderItem.dish_id === item.dish_id)
 
         if (existingItem) {
@@ -158,7 +158,7 @@ export class OrderController {
             special_requests: item.special_requests || ''
           }
           //AGREGAR EL ITEM A LA ORDEN
-          await OrderModel.addOrderItems(orderItemData)
+          await OrderDetailsModel.addOrderItems(orderItemData)
         }
       }
       //ACTUALIZAR EL TOTAL DE LA ORDEN
@@ -188,7 +188,7 @@ export class OrderController {
     }
     try {
       //VALIDAR SI EL ITEM YA EXISTE EN LA ORDEN PARA ACTUALIZAR LA CANTIDAD
-      const orderItems = await OrderModel.getOrderItems(order_id)
+      const orderItems = await OrderDetailsModel.getOrderItems(order_id)
       console.log('Items de la orden:', orderItems); // Debug: Ver qué items se encuentran
       const existingItem = orderItems.find(item => item.dish_id === dish_id)
       console.log('Item encontrado:', existingItem); // Debug: Ver qué item se encuentra
@@ -204,7 +204,7 @@ export class OrderController {
           quantity,
           price,
         }
-        await OrderModel.addOrderItems(orderItemData)
+        await OrderDetailsModel.addOrderItems(orderItemData)
         //AGREGAR EL NUEVO ITEM AL ARRAY DE ITEMS DE LA ORDEN
         orderItems.push(orderItemData)
       }

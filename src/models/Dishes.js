@@ -82,7 +82,7 @@ export class DishesModel {
   }
   static async getDishById(id) {
     const [results] = await pool.query('SELECT id_dish , dishes_name, dishes_description, price, available, c.id_category , c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE id_dish = ?', [id])
-    
+
     const dishData = results[0];
     const response = {
       id_dish: dishData.id_dish,
@@ -121,10 +121,10 @@ export class DishesModel {
 
     return dishes[0]
   }
-  static async updateDish(uuid, input) {
+  static async updateDish(id_dish, input) {
     const { dishes_name, dishes_description, price, available, image_url, category_name } = input
     // 1- CHECK IF THE DISH EXISTS
-    const [dishResult] = await pool.query('SELECT BIN_TO_UUID(id_dish) id FROM dishes WHERE id_dish = UUID_TO_BIN(?)', [uuid])
+    const [dishResult] = await pool.query('SELECT id_dish as id FROM dishes WHERE id_dish = UUID_TO_BIN(?)', [id_dish])
     if (dishResult.length === 0) {
       throw new Error('Plato no encontrado')
     }
