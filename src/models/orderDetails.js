@@ -1,3 +1,4 @@
+import { pool } from "../config/mysql.js"
 
 
 export class OrderDetailsModel {
