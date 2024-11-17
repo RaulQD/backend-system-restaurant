@@ -23,9 +23,18 @@ export class OrderModel {
 
     }
   }
-
+  static async getOrderActiveForTable(tableId){
+    try {
+      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status = "PENDIENTE"', [tableId])
+      return results[0]
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al obtener la orden activa de la mesa')
+    }
+  }
+    
   static async getOrdersByStatus(order_status) {
-    const [results] = await pool.query('SELECT o.id_order, o.employee_id, e.names, o.table_id, o.order_status, o.total, o.created_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee WHERE order_status IN (?)', [order_status]);
+    const [results] = await pool.query('SELECT o.id_order, o.employee_id, e.names, o.table_id, t.num_table, o.order_status, o.total, o.created_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?)', [order_status]);
     return results;
   }
   static async getOrderItem(orderId, dishId) {

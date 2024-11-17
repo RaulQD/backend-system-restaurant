@@ -99,6 +99,35 @@ export class OrderController {
     }
   }
 
+  static async getOrdersByTableId(req, res) {
+    const { tableId } = req.params
+    try {
+      const order = await OrderModel.getOrderActiveForTable(tableId)
+      if (!order) {
+        const error = new Error('No hay orden activa para esta mesa')
+        return res.status(404).json({ error: error.message, status: false });
+      }
+      const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
+      const itemsWithMoreInfo = orderItems.map(item => ({
+        id_item: item.id_item,
+        dish: {
+          id: item.id,
+          name: item.dishes_name
+        },
+        quantity: item.quantity,
+        price: item.price,
+      }))
+      const orderData = { ...order, items: itemsWithMoreInfo }
+      return res.status(200).json(orderData);
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
   static async createOrder(req, res) {
     const { employee_id, table_id, items } = req.body
     const employeeId = await EmployeeModel.findByEmployeeId(employee_id)

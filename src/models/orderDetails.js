@@ -3,6 +3,7 @@ import { pool } from "../config/mysql.js"
 
 export class OrderDetailsModel {
 
+  
 
   static async getOrderItems(orderId) {
     try {
