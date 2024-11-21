@@ -9,7 +9,12 @@ export class OrderModel {
 
   static async getOrderById(id) {
     const [results] = await pool.query('SELECT id_order, employee_id, table_id FROM orders WHERE id_order = ?', [id])
-    return results[0]
+    const order = results[0]
+    // OBTENER LOS ITEMS DE LA ORDEN CON SU ESTADO
+    const [itemsRow] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish, d.dishes_name, od.status, od.special_requests FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [id])
+    order.items = itemsRow
+    
+    return order;
   }
 
   static async createOrder(orderData) {

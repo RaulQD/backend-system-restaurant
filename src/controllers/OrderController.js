@@ -42,22 +42,8 @@ export class OrderController {
         const error = new Error('No hay ordenes pendientes')
         return res.status(404).json({ error: error.message, status: false });
       }
-      //ITERAR SOBRE LAS ORDENES Y OBTENER LOS DETALLES CORRESPONDIENTES
-      const orderWithDetails = []
-      for (const order of orders) {
-        const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
-        const itemsWithMoreInfo = orderItems.map(item => ({
-          id_item: item.id_item,
-          dish_id: item.dish_id,
-          dishes_name: item.dishes_name,  // Nombre del plato
-          quantity: item.quantity,
-          unit_price: item.unit_price,  // Precio unitario del plato
-          subtotal: item.subtotal,     // Subtotal calculado
-          special_requests: item.special_requests  // Peticiones especiales
-        }))
-        orderWithDetails.push({ ...order, items: itemsWithMoreInfo })
-      }
-      return res.status(200).json(orderWithDetails);
+ 
+      return res.status(200).json(orders);
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
@@ -76,19 +62,8 @@ export class OrderController {
         const error = new Error('Orden no encontrada')
         return res.status(404).json({ error: error.message, status: false });
       }
-      const orderItems = await OrderDetailsModel.getOrderItems(orderId)
-      const itemsWithMoreInfo = orderItems.map(item => ({
-        id_item: item.id_item,
-        dish: {
-          id: item.id,
-          name: item.dishes_name
-        },
-        quantity: item.quantity,
-        price: item.price,
-      }))
-
-      const orderData = { ...order, items: itemsWithMoreInfo }
-      return res.status(200).json(orderData);
+     
+      return res.status(200).json(order);
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
