@@ -42,7 +42,7 @@ export class OrderController {
         const error = new Error('No hay ordenes pendientes')
         return res.status(404).json({ error: error.message, status: false });
       }
- 
+
       return res.status(200).json(orders);
     } catch (error) {
       console.log(error)
@@ -62,7 +62,7 @@ export class OrderController {
         const error = new Error('Orden no encontrada')
         return res.status(404).json({ error: error.message, status: false });
       }
-     
+
       return res.status(200).json(order);
     } catch (error) {
       console.log(error)
@@ -249,6 +249,46 @@ export class OrderController {
       });
     }
   }
+  static async updateOrderItemStatus(req, res) {
+    const { orderId, itemId } = req.params
+    const { status } = req.body
+    const ALLOWED_STATUSES = ['PENDIENTE', 'EN PREPARACIÓN', 'SERVIDO', 'CANCELADO'];
+
+    if (!status) {
+      const error = new Error('El estado es requerido.')
+      return res.status(400).json({ message: error.message, status: false });
+    }
+
+    try {
+      //VALIDAR SI EL ESTADO PROPORCIONADO ES VÁLIDO
+      if (!ALLOWED_STATUSES.includes(status)) {
+        const error = new Error('El estado proporcionado no es válido.')
+        return res.status(400).json({ message: error.message, status: false });
+      }
+      const orderAndItemExits = await OrderModel.getOrderIdAndItemId(orderId, itemId)
+      console.log('Resultado de la consulta:', orderAndItemExits);      //VALIDAR SI LA ORDEN Y EL ITEM EXISTEN
+      if (!orderAndItemExits) {
+        const error = new Error('Orden o item no encontrado')
+        return res.status(404).json({ message: error.message, status: false });
+      }
+      //VALIDAR SI EL ID_ITEM PERTENECE A LA ORDEN
+      // if (orderAndItemExits.order_id !== orderId) {
+      //   const error = new Error('El item no pertenece a la orden')
+      //   return res.status(400).json({ message: error.message, status: false });
+      // }
+      //ACTUALIZAR EL ESTADO DEL ITEM DE LA ORDEN
+      await OrderModel.updateOrderItemStatus(orderId,itemId, status)
+
+      return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true });
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
   static async cancelOrder(req, res) {
     const { orderId, tableId } = req.params
 
@@ -301,21 +341,5 @@ export class OrderController {
       });
     }
   }
-  // static async getOrderItemsByOrderId(req, res) {
-  //   const { orderId } = req.params
-  //   try {
-  //     const orderItems = await OrderModel.getOrderItemsByOrderId(orderId)
-  //     if (!orderItems || orderItems.length === 0) {
-  //       return res.status(404).json({ message: 'No hay items en la orden', status: false });
-  //     }
-  //     return res.status(200).json({ message: 'Items de la orden obtenidos', status: true, items: orderItems });
-  //   } catch (error) {
-  //     console.log(error)
-  //     const statusCode = error.statusCode || 500
-  //     return res.status(statusCode).json({
-  //       message: error.message, // Mostrar mensaje de error
-  //       status: false
-  //     });
-  //   }
-  // }
+
 }
