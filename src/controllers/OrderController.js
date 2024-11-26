@@ -39,8 +39,8 @@ export class OrderController {
     try {
       const orders = await OrderModel.getOrdersByStatus(['pendiente', 'en preparación'])
       if (orders.length === 0) {
-        const error = new Error('No hay ordenes pendientes')
-        return res.status(404).json({ error: error.message, status: false });
+        const error = new Error('No hay ordenes pendientes para la cocina.')
+        return res.status(404).json({ message: error.message, status: false });
       }
 
       return res.status(200).json(orders);
@@ -60,7 +60,7 @@ export class OrderController {
       const order = await OrderModel.getOrderById(orderId)
       if (!order) {
         const error = new Error('Orden no encontrada')
-        return res.status(404).json({ error: error.message, status: false });
+        return res.status(404).json({ message: error.message, status: false });
       }
 
       return res.status(200).json(order);
@@ -80,7 +80,7 @@ export class OrderController {
       const order = await OrderModel.getOrderActiveForTable(tableId)
       if (!order) {
         const error = new Error('No hay orden activa para esta mesa')
-        return res.status(404).json({ error: error.message, status: false });
+        return res.status(404).json({ message: error.message, status: false });
       }
       const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
       const itemsWithMoreInfo = orderItems.map(item => ({
@@ -277,9 +277,9 @@ export class OrderController {
       //   return res.status(400).json({ message: error.message, status: false });
       // }
       //ACTUALIZAR EL ESTADO DEL ITEM DE LA ORDEN
-      await OrderModel.updateOrderItemStatus(orderId,itemId, status)
+      await OrderModel.updateOrderItemStatus(orderId, itemId, status)
 
-      return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true });
+      return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true, order_id: orderAndItemExits.order_id });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500

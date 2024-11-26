@@ -84,7 +84,7 @@ CREATE TABLE orders (
     id_order INT PRIMARY KEY AUTO_INCREMENT,
     employee_id INT NOT NULL,
     table_id INT NOT NULL,
-    order_status ENUM('PENDIENTE', 'EN PROCESO', 'COMPLETADO', 'CANCELADO') NOT NULL DEFAULT 'PENDIENTE',
+    order_status ENUM('PENDIENTE', 'EN PREPARACIÓN', 'SERVIDO', 'CANCELADO') NOT NULL DEFAULT 'PENDIENTE',
     total DECIMAL(10, 2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -100,6 +100,7 @@ CREATE TABLE order_details (
     quantity INT NOT NULL,
 	unit_price DECIMAL(10,2) NOT NULL,  -- Precio unitario del plato al momento de la orden
 	subtotal DECIMAL(10,2) NOT NULL,   -- Subtotal calculado para la cantidad de platos
+    status ENUM('PENDIENTE', 'EN PREPARACIÓN', 'SERVIDO', 'COMPLETADO', 'CANCELADO') NOT NULL DEFAULT 'PENDIENTE',
 	special_requests VARCHAR(255),   -- Peticiones especiales del cliente
     FOREIGN KEY (order_id) REFERENCES orders(id_order),
     FOREIGN KEY (dish_id) REFERENCES dishes(id_dish)

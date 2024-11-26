@@ -129,7 +129,7 @@ export class DishesModel {
       throw new Error('Plato no encontrado')
     }
     // 2- GET THE UUID OF THE CATEGORY
-    const [categoryResult] = await pool.query('SELECT BIN_TO_UUID(id_category) id FROM category WHERE category_name = ?', [category_name])
+    const [categoryResult] = await pool.query('SELECT id_category id FROM category WHERE category_name = ?', [category_name])
     if (categoryResult.length === 0) {
       throw new Error('La categoria no existe')
     }
@@ -137,14 +137,14 @@ export class DishesModel {
     console.log(categoryResult)
     // 3 - CHECK IF THE DISH ALREADY EXISTS
     if (dishes_name) {
-      const [existingDish] = await pool.query('SELECT * FROM dishes WHERE dishes_name = ? AND id_dish != UUID_TO_BIN(?)', [dishes_name, uuid])
+      const [existingDish] = await pool.query('SELECT * FROM dishes WHERE dishes_name = ? AND id_dish != ?', [dishes_name, uuid])
       if (existingDish.length > 0) {
         throw new Error('Este plato ya existe')
       }
     }
     try {
       // 3 - UPDATE THE DISH
-      const [result] = await pool.query('UPDATE dishes SET dishes_name = ?, dishes_description = ?, price = ?, available = ?, category_id = UUID_TO_BIN(?) WHERE id_dish = UUID_TO_BIN(?)', [dishes_name, dishes_description, price, available, id, uuid])
+      const [result] = await pool.query('UPDATE dishes SET dishes_name = ?, dishes_description = ?, price = ?, available = ?, category_id = ? WHERE id_dish = ?', [dishes_name, dishes_description, price, available, id, uuid])
       if (result.affectedRows === 0) {
         throw new Error('Error al actualizar el plato')
       }
@@ -153,11 +153,11 @@ export class DishesModel {
       throw new Error('Error al actualizar el plato')
     }
     // 4 - GET THE UPDATED DISH
-    const [updatedDish] = await pool.query('SELECT BIN_TO_UUID(id_dish) id, dishes_name, dishes_description,available, price FROM dishes WHERE id_dish = UUID_TO_BIN(?)', [uuid])
+    const [updatedDish] = await pool.query('SELECT BIN_TO_UUID(id_dish) id, dishes_name, dishes_description,available, price FROM dishes WHERE id_dish = ?', [uuid])
 
     return updatedDish[0]
   }
-
+  
   static async deleteDish(id) {
     // 1- CHECK IF THE DISH EXISTS
     const [dishResult] = await pool.query('SELECT BIN_TO_UUID(id_dish) id FROM dishes WHERE id_dish = UUID_TO_BIN(?)', [id])

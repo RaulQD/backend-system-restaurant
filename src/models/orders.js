@@ -44,6 +44,8 @@ export class OrderModel {
 
   static async getOrdersByStatus(order_status) {
     const [results] = await pool.query(`SELECT o.id_order, o.employee_id, CONCAT(e.names ,' ', e.last_name) AS names, o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o  JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?)`, [order_status]);
+
+
     return results;
   }
   static async getOrderItem(orderId, dishId) {
