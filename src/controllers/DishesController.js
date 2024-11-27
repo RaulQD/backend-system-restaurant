@@ -20,9 +20,9 @@ export class DishesController {
     }
   }
   static async getDishById(req, res) {
-    const { id } = req.params
+    const { dishId } = req.params
     try {
-      const dish = await DishesModel.getDishById(id);
+      const dish = await DishesModel.getDishById(dishId);
       if (!dish) {
         return res.status(404).json({ message: 'Plato no encontrado', status: false })
       }
@@ -61,11 +61,58 @@ export class DishesController {
   }
 
   static async updateDish(req, res) {
-    const { id } = req.params
+
+
     try {
+      const { dishId } = req.params
+      const { dishes_name, dishes_description, price, available, category_name } = req.body
+      const existingDish = await DishesModel.getDishById(dishId);
+      if (!existingDish) {
+        const error = new Error('Plato no encontrado')
+        return res.status(404).json({ message: error.message, status: false })
+      }
+
+      //VALIDAR SI EL NOMBRE DEL PLATO YA EXISTE SIN CONTAR EL MISMO PLATO
+      if (dishes_name && dishes_name !== existingDish.dishes_name) {
+        const existingName = await DishesModel.findByDishName(dishes_name);
+        if (existingName && existingName.id_dish !== dishId) {
+          const error = new Error('El nombre del plato ya esta en uso')
+          return res.status(400).json({ message: error.message, status: false })
+        }
+      }
+
+      let image_url = existingDish.image_url;
+      console.log('Imagen anterior', image_url)
+      // Validación manual de la imagen
+      if (req.file) {
+        //ELIMNAR LA IMAGEN ANTERIOR en cloudinary
+        if (existingDish.image_url) {
+          const public_id = existingDish.image_url.split('/').pop().split('.')[0];
+          await cloudinary.uploader.destroy(`dishes/${public_id}`);
+          console.log('Eliminando imagen anterior', public_id);
+        }
+        //SUBIR LA NUEVA IMAGEN
+        const result = await cloudinary.uploader.upload(`data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
+          folder: 'dishes'
+        })
+        //ACTUALIZAR LA URL DE LA IMAGEN
+        image_url = result.secure_url;
+        console.log('Nueva imagen', image_url)
+      }
+      // ACTUALIZAR EL PLATO
+      const updateDish = {
+        dishes_name,
+        dishes_description,
+        price,
+        available,
+        image_url,
+        category_name
+      }
+
+
       // UPDATE THE DISH
-      const updatedDish = await DishesModel.updateDish(id, req.body); // Pasar el req.body directamente
-      return res.status(200).json({ message: 'Plato actualizado exitosamente', status: true, data: updatedDish })
+      const updatedDish = await DishesModel.updateDish(dishId, updateDish);
+      return res.status(200).json({ message: 'Plato actualizado exitosamente', status: true, updatedDish })
     } catch (error) {
       console.log(error)
       return res.status(400).json({

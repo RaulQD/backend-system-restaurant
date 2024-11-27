@@ -12,17 +12,16 @@ const routes = Router();
 
 routes.get('/', DishesController.getDishes)
 routes.post('/', upload.single('image_url'), dishValidation, handleInputErrors, DishesController.createDish)
-routes.get('/:id',
-  param('id').isInt().withMessage('Invalid dishes id'),
+routes.get('/:dishId',
+  param('dishId').isInt().withMessage('Invalid dishes id'),
   handleInputErrors,
   DishesController.getDishById)
-routes.put('/:id',
-  param('id').isInt().withMessage('Invalid dishes id'),
-  dishValidation,
+routes.put('/:dishId', upload.single('image_url'),
+  param('dishId').isInt().withMessage('Invalid dishes id'),
   handleInputErrors,
   DishesController.updateDish)
-routes.delete('/:id',
-  param('id').isInt().withMessage('Invalid dishes id'),
+routes.delete('/:dishId',
+  param('dishId').isInt().withMessage('Invalid dishes id'),
   handleInputErrors,
   DishesController.deleteDish)
 
