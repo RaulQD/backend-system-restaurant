@@ -18,6 +18,7 @@ routes.get('/:dishId',
   DishesController.getDishById)
 routes.put('/:dishId', upload.single('image_url'),
   param('dishId').isInt().withMessage('Invalid dishes id'),
+  dishValidation,
   handleInputErrors,
   DishesController.updateDish)
 routes.delete('/:dishId',

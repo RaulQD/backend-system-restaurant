@@ -24,9 +24,24 @@ export class DishesController {
     try {
       const dish = await DishesModel.getDishById(dishId);
       if (!dish) {
-        return res.status(404).json({ message: 'Plato no encontrado', status: false })
+        const error = new Error('Plato no encontrado')
+        return res.status(404).json({ message: error.message, status: false })
       }
-      return res.status(200).json(dish)
+      const response = {
+        id_dish: dish.id,
+        dishes_name: dish.dishes_name,
+        dishes_description: dish.dishes_description,
+        price: dish.price,
+        available: dish.available,
+        image_url: dish.image_url,
+        category: {
+          id: dish.id_category,
+          category_name: dish.category_name,
+          category_description: dish.category_description,
+        }
+      }
+
+      return res.status(200).json(response)
     } catch (error) {
       console.log(error)
       return res.status(500).json({ message: 'Internal server error' })
@@ -61,8 +76,6 @@ export class DishesController {
   }
 
   static async updateDish(req, res) {
-
-
     try {
       const { dishId } = req.params
       const { dishes_name, dishes_description, price, available, category_name } = req.body
@@ -71,16 +84,13 @@ export class DishesController {
         const error = new Error('Plato no encontrado')
         return res.status(404).json({ message: error.message, status: false })
       }
-
-      //VALIDAR SI EL NOMBRE DEL PLATO YA EXISTE SIN CONTAR EL MISMO PLATO
       if (dishes_name && dishes_name !== existingDish.dishes_name) {
-        const existingName = await DishesModel.findByDishName(dishes_name);
-        if (existingName && existingName.id_dish !== dishId) {
-          const error = new Error('El nombre del plato ya esta en uso')
-          return res.status(400).json({ message: error.message, status: false })
+        const existingDishName = await DishesModel.findDishByName(dishes_name.trim());
+        if (existingDishName && existingDishName.id_dish !== existingDish.id_dish) {
+          const error = new Error('El nombre del plato ya está en uso');
+          return res.status(400).json({ message: error.message, status: false });
         }
       }
-
       let image_url = existingDish.image_url;
       console.log('Imagen anterior', image_url)
       // Validación manual de la imagen
@@ -108,8 +118,6 @@ export class DishesController {
         image_url,
         category_name
       }
-
-
       // UPDATE THE DISH
       const updatedDish = await DishesModel.updateDish(dishId, updateDish);
       return res.status(200).json({ message: 'Plato actualizado exitosamente', status: true, updatedDish })

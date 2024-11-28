@@ -2,7 +2,7 @@ import { pool } from "../config/mysql.js";
 
 export class DishesModel {
 
-  static async findByDishName(dishes_name) {
+  static async findDishByName(dishes_name) {
     const [results] = await pool.query('SELECT id_dish, dishes_name FROM dishes WHERE dishes_name = ?', [dishes_name])
     return results[0]
   }
@@ -50,7 +50,6 @@ export class DishesModel {
         throw error;
       }
     }
-
     // Ejecutar la consulta para obtener los empleados con paginación
     const [dishesResult] = await pool.query(query, queryParams)
 
@@ -86,24 +85,12 @@ export class DishesModel {
       }
     };
   }
-  static async getDishById(id) {
-    const [results] = await pool.query('SELECT id_dish , dishes_name, dishes_description, price, available, image_url, c.id_category , c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE id_dish = ?', [id])
+  static async getDishById(dishId) {
+    const [results] = await pool.query('SELECT id_dish as id , dishes_name, dishes_description, price, available, image_url, c.id_category , c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE id_dish = ?', [dishId])
 
-    const dishData = results[0];
-    const response = {
-      id_dish: dishData.id_dish,
-      dishes_name: dishData.dishes_name,
-      dishes_description: dishData.dishes_description,
-      price: dishData.price,
-      available: dishData.available,
-      image_url: dishData.image_url,
-      category: {
-        id: dishData.id_category,
-        category_name: dishData.category_name,
-        category_description: dishData.category_description,
-      }
-    };
-    return response;
+    const dish = results[0];
+    return dish
+
   }
   static async createdish({ dishes_name, dishes_description, price, image_url, category_name }) {
     // 1- GET THE UUID OF THE CATEGORY
