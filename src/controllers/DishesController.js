@@ -34,13 +34,8 @@ export class DishesController {
         price: dish.price,
         available: dish.available,
         image_url: dish.image_url,
-        category: {
-          id: dish.id_category,
-          category_name: dish.category_name,
-          category_description: dish.category_description,
-        }
+        category_name: dish.category_name,
       }
-
       return res.status(200).json(response)
     } catch (error) {
       console.log(error)
