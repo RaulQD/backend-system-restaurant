@@ -21,7 +21,7 @@ routes.put('/:dishId', upload.single('image_url'),
   dishValidation,
   handleInputErrors,
   DishesController.updateDish)
-routes.put('/:dishId',
+routes.delete('/:dishId',
   param('dishId').isInt().withMessage('Invalid dishes id'),
   handleInputErrors,
   DishesController.deleteDish)
