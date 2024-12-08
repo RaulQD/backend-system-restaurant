@@ -127,9 +127,15 @@ export class DishesController {
   static async deleteDish(req, res) {
     const { id } = req.params
     try {
+      // GET THE DISH BY ID
+      const existingDish = await DishesModel.getDishById(id);
+      if(!existingDish){
+        const error = new Error('Plato no encontrado')
+        return res.status(404).json({ message: error.message, status: false })
+      }
+      
       // DELETE THE DISH FROM THE DATABASE
       await DishesModel.deleteDish(id);
-
       return res.status(200).json({ message: 'Plato eliminado exitosamente', status: true })
 
     } catch (error) {

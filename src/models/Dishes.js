@@ -134,14 +134,10 @@ export class DishesModel {
     }
   }
   static async deleteDish(id) {
-    // 1- CHECK IF THE DISH EXISTS
-    const [dishResult] = await pool.query('SELECT BIN_TO_UUID(id_dish) id FROM dishes WHERE id_dish = UUID_TO_BIN(?)', [id])
-    if (dishResult.length === 0) {
-      throw new Error('Plato no encontrado')
-    }
     try {
-      await pool.query('DELETE FROM dishes WHERE id_dish = UUID_TO_BIN(?)', [id])
+      await pool.query('UPDATE dishes SET available = "NO DISPONIBLE" WHERE id_dish = ?', [id])
     } catch (error) {
+      console.log(error);
       throw new Error('Error al eliminar el plato')
     }
   }
