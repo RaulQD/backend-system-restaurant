@@ -37,7 +37,7 @@ export class OrderController {
   }
   static async getOrdersForKitchen(req, res) {
     try {
-      const orders = await OrderModel.getOrdersByStatus(['pendiente', 'en preparación'])
+      const orders = await OrderModel.getOrdersByStatus(['PENDIENTE', 'EN PROCESO'])
       if (orders.length === 0) {
         const error = new Error('No hay ordenes pendientes para la cocina.')
         return res.status(404).json({ message: error.message, status: false });
@@ -265,8 +265,8 @@ export class OrderController {
         const error = new Error('El estado proporcionado no es válido.')
         return res.status(400).json({ message: error.message, status: false });
       }
+      //VALIDAR SI EL ITEM DE LA ORDEN EXISTE
       const orderAndItemExits = await OrderModel.getOrderIdAndItemId(orderId, itemId)
-      console.log('Resultado de la consulta:', orderAndItemExits);      //VALIDAR SI LA ORDEN Y EL ITEM EXISTEN
       if (!orderAndItemExits) {
         const error = new Error('Orden o item no encontrado')
         return res.status(404).json({ message: error.message, status: false });
@@ -279,6 +279,17 @@ export class OrderController {
       //ACTUALIZAR EL ESTADO DEL ITEM DE LA ORDEN
       await OrderModel.updateOrderItemStatus(orderId, itemId, status)
 
+      //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN SERVIDOS
+      const orderItems = await OrderDetailsModel.getOrderItems(orderId)
+      const allItemsServed = orderItems.every(item => item.status === 'SERVIDO')
+
+      if(status === 'EN PREPARACIÓN'){
+        await OrderModel.updateOrderStatus(orderId, 'EN PROCESO')
+      }
+
+      if(allItemsServed){
+        await OrderModel.updateOrderStatus(orderId, 'COMPLETADO')
+      }
       return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true, order_id: orderAndItemExits.order_id });
     } catch (error) {
       console.log(error)

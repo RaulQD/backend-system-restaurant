@@ -108,6 +108,7 @@ CREATE TABLE order_details (
 
 ALTER TABLE employees CHANGE image_url profile_picture_url VARCHAR(255) NULL;
 ALTER TABLE dishes ADD image_url VARCHAR(255) NULL;
+ALTER TABLE dishes CHANGE available available ENUM('DISPONIBLE','NO DISPONIBLE') default 'DISPONIBLE';
 ALTER TABLE orders CHANGE employee_id employee_id INT NOT NULL;
 ALTER TABLE orders CHANGE total  total DECIMAL(10, 2) DEFAULT 0.00;
 ALTER TABLE dishes CHANGE price price DECIMAL(10,2) NOT NULL;

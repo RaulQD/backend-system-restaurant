@@ -133,9 +133,9 @@ export class DishesModel {
       throw new Error('Error al actualizar el plato')
     }
   }
-  static async deleteDish(id) {
+  static async deleteDish(dishId) {
     try {
-      await pool.query('UPDATE dishes SET available = "NO DISPONIBLE" WHERE id_dish = ?', [id])
+      await pool.query('UPDATE dishes SET available = "NO DISPONIBLE" WHERE id_dish = ?', [dishId])
     } catch (error) {
       console.log(error);
       throw new Error('Error al eliminar el plato')
