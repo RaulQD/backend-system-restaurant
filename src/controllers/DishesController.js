@@ -140,7 +140,6 @@ export class DishesController {
       // DELETE THE DISH FROM THE DATABASE
       await DishesModel.deleteDish(dishId);
       return res.status(200).json({ message: 'Plato eliminado exitosamente', status: true })
-
     } catch (error) {
       console.log(error)
       return res.status(400).json({
