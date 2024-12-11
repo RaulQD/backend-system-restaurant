@@ -141,4 +141,12 @@ export class DishesModel {
       throw new Error('Error al eliminar el plato')
     }
   }
+  static async restoredDish(dishId) {
+    try {
+      await pool.query('UPDATE dishes SET available = "DISPONIBLE" WHERE id_dish = ?', [dishId])
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al restaurar el plato')
+    }
+  }
 }

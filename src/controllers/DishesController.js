@@ -129,15 +129,37 @@ export class DishesController {
     try {
       // GET THE DISH BY ID
       const existingDish = await DishesModel.getDishById(dishId);
-      if(!existingDish){
+      if (!existingDish) {
         const error = new Error('Plato no encontrado')
         return res.status(404).json({ message: error.message, status: false })
       }
-      
+      if(existingDish.available === 'NO DISPONIBLE'){
+        const error = new Error('El plato ya está eliminado')
+        return res.status(400).json({ message: error.message, status: false })
+      }
       // DELETE THE DISH FROM THE DATABASE
       await DishesModel.deleteDish(dishId);
       return res.status(200).json({ message: 'Plato eliminado exitosamente', status: true })
 
+    } catch (error) {
+      console.log(error)
+      return res.status(400).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
+  static async restoredDish(req, res) {
+    const { dishId } = req.params
+    try {
+       const existingDish = await DishesModel.getDishById(dishId);
+      if (!existingDish) {
+        const error = new Error('Plato no encontrado')
+        return res.status(404).json({ message: error.message, status: false })
+      }
+      // RESTORED THE DISH FROM THE DATABASE
+      await DishesModel.restoredDish(dishId);
+      return res.status(200).json({ message: 'Plato restaurado exitosamente', status: true })
     } catch (error) {
       console.log(error)
       return res.status(400).json({

@@ -21,10 +21,13 @@ routes.put('/:dishId', upload.single('image_url'),
   dishValidation,
   handleInputErrors,
   DishesController.updateDish)
-routes.delete('/:dishId',
+routes.patch('/:dishId/delete',
   param('dishId').isInt().withMessage('Invalid dishes id'),
   handleInputErrors,
   DishesController.deleteDish)
-
+routes.patch('/:dishId/restore',
+  param('dishId').isInt().withMessage('Invalid dishes id'),
+  handleInputErrors,
+  DishesController.restoredDish)
 
 export default routes;
