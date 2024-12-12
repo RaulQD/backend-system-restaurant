@@ -252,7 +252,7 @@ export class OrderController {
   static async updateOrderItemStatus(req, res) {
     const { orderId, itemId } = req.params
     const { status } = req.body
-    const ALLOWED_STATUSES = ['PENDIENTE', 'EN PREPARACIÓN', 'SERVIDO', 'CANCELADO'];
+    const ALLOWED_STATUSES = ['PENDIENTE', 'EN PREPARACION', 'SERVIDO', 'CANCELADO'];
 
     if (!status) {
       const error = new Error('El estado es requerido.')
@@ -271,25 +271,23 @@ export class OrderController {
         const error = new Error('Orden o item no encontrado')
         return res.status(404).json({ message: error.message, status: false });
       }
-      //VALIDAR SI EL ID_ITEM PERTENECE A LA ORDEN
-      // if (orderAndItemExits.order_id !== orderId) {
-      //   const error = new Error('El item no pertenece a la orden')
-      //   return res.status(400).json({ message: error.message, status: false });
-      // }
+
       //ACTUALIZAR EL ESTADO DEL ITEM DE LA ORDEN
       await OrderModel.updateOrderItemStatus(orderId, itemId, status)
 
       //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN SERVIDOS
       const orderItems = await OrderDetailsModel.getOrderItems(orderId)
-      const allItemsServed = orderItems.every(item => item.status === 'SERVIDO')
-
-      if(status === 'EN PREPARACIÓN'){
+      const allItemsServed = orderItems.every(item => item.status.trim().toUpperCase() === 'SERVIDO')
+      console.log('Items de la orden:', orderItems); // Debug: Ver qué items se encuentran
+      console.log('Todos los items servidos:', allItemsServed); // Debug: Ver si todos los items están servidos
+      if (status === 'EN PREPARACION') {
         await OrderModel.updateOrderStatus(orderId, 'EN PROCESO')
       }
 
-      if(allItemsServed){
+      if (allItemsServed) {
         await OrderModel.updateOrderStatus(orderId, 'COMPLETADO')
       }
+
       return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true, order_id: orderAndItemExits.order_id });
     } catch (error) {
       console.log(error)
@@ -300,6 +298,7 @@ export class OrderController {
       });
     }
   }
+
   static async cancelOrder(req, res) {
     const { orderId, tableId } = req.params
 
