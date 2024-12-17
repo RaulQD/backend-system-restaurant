@@ -25,26 +25,37 @@ export const validateToken = async (req, res, next) => {
     })
   }
   try {
-    // VERIFICAR EL TOKEN
+    // DECODIFICAR EL TOKEN
     const decoded = jwt.verify(token, process.env.SECRET_KEY)
+    // Buscar usuario en la base de datos
     const user = await UserModel.findByUserId(decoded.id)
     if (!user) {
       return res.status(401).json({
         message: ERROR_MESSAGES.TOKEN_INVALID,
         status: false
       })
-    } else {
-      req.user = user
     }
+    req.user = user
+    next()
   } catch (error) {
-    console.log('error:', error);
-    return res.status(401).json({
-      message: ERROR_MESSAGES.TOKEN_INVALID,
-      status: false
-    })
+    // Verificar si el token ha expirado
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: ERROR_MESSAGES.TOKEN_EXPIRED, status: false });
+    }
+
+    // Manejar otros errores del token
+    return res.status(401).json({ message: ERROR_MESSAGES.TOKEN_INVALID, status: false });
   }
-  next()
 }
+// Middleware para validar roles
+export const authorizeRole = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+    }
+    next();
+  };
+};
 
 export const loginValidation = [
   body('username')
