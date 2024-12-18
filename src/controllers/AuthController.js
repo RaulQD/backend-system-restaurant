@@ -89,14 +89,9 @@ export class AuthController {
             const employee = {
                 id: user.id,
                 username: user.username,
-                employee: {
-                    id_employee: user.id_employee,
-                    full_name: `${user.names} ${user.last_name}`,
-                    profile_picture_url: user.profile_picture_url,
-                },
-                role: {
-                    name: user.role_name
-                }
+                full_name: `${user.names} ${user.last_name}`,
+                profile_picture_url: user.profile_picture_url,
+                role: user.role_name
             }
             return res.status(200).json(employee)
         } catch (error) {
