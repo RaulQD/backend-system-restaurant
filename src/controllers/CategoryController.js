@@ -72,19 +72,18 @@ export class CategoryController {
     try {
       const { id } = req.params
       const { category_name, category_description } = req.body
-      const [category] = await pool.query('SELECT BIN_TO_UUID(id_category) id, category_name, category_description FROM category WHERE id_category = UUID_TO_BIN(?)', [id])
-      if (category.length === 0) {
-        const error = new Error('La categoria no existe')
+      const existingCategory = await CategoryModel.getCategoryById(id)
+      if (!existingCategory) {
+        const error = new Error(`La categoria con el id ${id} no existe`)
         return res.status(404).json({ message: error.message, status: false })
       }
-      if (category_name) {
-        const [existingCategory] = await pool.query('SELECT * FROM category WHERE category_name = ? AND id_category != UUID_TO_BIN(?)', [category_name, id])
-        if (existingCategory.length > 0) {
-          const error = new Error('La categoria ya existe')
+      if (category_name && dishes_name !== existingCategory.category_name) {
+        const existingCategoryName = await CategoryModel.findCategoryByName(category_name.trim())
+        if (existingCategoryName && existingCategoryName.id !== existingCategory.id) {
+          const error = new Error('El nombre de la categoria ya esta en uso')
           return res.status(400).json({ message: error.message, status: false })
         }
       }
-
       await pool.query('UPDATE category SET category_name = ?, category_description = ? WHERE id_category = UUID_TO_BIN(?)', [category_name, category_description, id])
 
       return res.status(200).json({ message: 'Category updated successfully', status: true, data: { id, category_name, category_description } })

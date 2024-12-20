@@ -28,7 +28,7 @@ export class CategoryModel {
     return category
   }
   static async createCategory(category_name, category_description) {
-    
+
     try {
       await pool.query('INSERT INTO category (category_name, category_description) VALUES (?, ?)', [category_name, category_description])
 
@@ -37,18 +37,9 @@ export class CategoryModel {
     }
   }
 
-  static async updateCategory(data, uuid) {
-    const { category_name, category_description } = data
-    const category = await this.getCategoryById(uuid)
-    if (category_name) {
-      const existingCategory = await this.findCategoryByName(category_name)
-      if (existingCategory.id !== category.id) {
-        const error = new Error('La categoria ya existe')
-        error.status = 400
-        throw error
-      }
-    }
-    await pool.query('UPDATE category SET category_name = ?, category_description = ? WHERE id_category = ?', [category_name, category_description, uuid])
+  static async updateCategory(data, id_category) {
+    const { category_name, category_description } = data  
+    await pool.query('UPDATE category SET category_name = ?, category_description = ? WHERE id_category = ?', [category_name, category_description, id_category])
   }
 
 
