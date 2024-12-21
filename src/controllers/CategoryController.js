@@ -72,23 +72,37 @@ export class CategoryController {
     try {
       const { id } = req.params
       const { category_name, category_description } = req.body
+
+      //VERIFICAR SI LA CATEGORIA EXISTE
       const existingCategory = await CategoryModel.getCategoryById(id)
       if (!existingCategory) {
         const error = new Error(`La categoria con el id ${id} no existe`)
         return res.status(404).json({ message: error.message, status: false })
       }
-      if (category_name && dishes_name !== existingCategory.category_name) {
-        const existingCategoryName = await CategoryModel.findCategoryByName(category_name.trim())
-        if (existingCategoryName && existingCategoryName.id !== existingCategory.id) {
-          const error = new Error('El nombre de la categoria ya esta en uso')
+      //VERIFICAR SI EL NOMBRE DE LA CATEGORIA YA EXISTE EN LA BASE DE DATOS SI NO ACTUALIZAR CON EL MISMO NOMBRE
+      if (category_name !== existingCategory.category_name) {
+        const categoryExists = await CategoryModel.findCategoryByName(category_name)
+        if (categoryExists) {
+          const error = new Error(`La categoria ${category_name} ya existe`)
           return res.status(400).json({ message: error.message, status: false })
         }
       }
-      await pool.query('UPDATE category SET category_name = ?, category_description = ? WHERE id_category = UUID_TO_BIN(?)', [category_name, category_description, id])
+      const data = { category_name, category_description }
+      //ACTUALIZAR LA CATEGORIA
+      const updateCategory = await CategoryModel.updateCategory(data, id)
+      if (updateCategory.affectedRows === 0) {
+        return res.status(500).json({ message: 'No se pudo actualizar la categoría', status: false });
+      }
 
-      return res.status(200).json({ message: 'Category updated successfully', status: true, data: { id, category_name, category_description } })
+
+      return res.status(200).json({ message: 'Categoria actualizada correctamente', status: true, updateCategory })
     } catch (error) {
-      res.status(500).json({ message: 'Internal server error' })
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      })
     }
   }
   static async deleteCategory(req, res) {

@@ -104,7 +104,7 @@ export class DishesController {
         image_url = result.secure_url;
         console.log('Nueva imagen', image_url)
       }
-      // ACTUALIZAR EL PLATO
+      // OBJETO DEL PLATO
       const updateDish = {
         dishes_name,
         dishes_description,
@@ -113,7 +113,7 @@ export class DishesController {
         image_url,
         category_name
       }
-      // UPDATE THE DISH
+      // ACTUALIZAR EL PLATO
       const updatedDish = await DishesModel.updateDish(dishId, updateDish);
       return res.status(200).json({ message: 'Plato actualizado exitosamente', status: true, updatedDish })
     } catch (error) {
