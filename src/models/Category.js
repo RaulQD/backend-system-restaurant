@@ -41,6 +41,13 @@ export class CategoryModel {
       throw new Error('Error al actualizar la categoria')
     }
   }
-
+  static async deleteCategory(id_category){
+    try {
+      await pool.query('DELETE FROM category WHERE id_category = ?', [id_category])
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al eliminar la categoria')
+    }
+  }
 
 }

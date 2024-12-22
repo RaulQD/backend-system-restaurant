@@ -18,6 +18,9 @@ routes.put('/:id',
   param('id').isInt().withMessage('Invalid category id'),
   categoryValidation,
   handleInputErrors, CategoryController.updateCategory)
-routes.delete('/:id', CategoryController.deleteCategory)
+routes.delete('/:id',
+  param('id').isInt().withMessage('Invalid category id'),
+  handleInputErrors
+  , CategoryController.deleteCategory)
 
 export default routes;

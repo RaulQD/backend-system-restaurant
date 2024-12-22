@@ -111,7 +111,7 @@ export class DishesModel {
       console.log(error)
       throw new Error('Error al crear el plato')
     }
-    const [dishes] = await pool.query('SELECT id_dish as id, dishes_name, dishes_description, price, image_url FROM dishes WHERE id_dish = ?', [id])
+    const [dishes] = await pool.query('SELECT d.id_dish as id, d.dishes_name, d.dishes_description, d.price, d.image_url, c.category_name FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE d.id_dish = ?', [id])
 
     return dishes[0]
   }

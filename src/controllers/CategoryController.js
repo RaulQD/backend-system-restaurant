@@ -108,16 +108,17 @@ export class CategoryController {
   static async deleteCategory(req, res) {
     try {
       const { id } = req.params
-      const [category] = await pool.query('SELECT BIN_TO_UUID(id_category) id, category_name, category_description FROM category WHERE id_category = UUID_TO_BIN(?)', [id])
-      if (category.length === 0) {
+      const existingCategory = await CategoryModel.getCategoryById(id)
+      if (!existingCategory) {
         const error = new Error(`La categoria con el id ${id} no existe`)
         return res.status(404).json({ message: error.message, status: false })
       }
-      await pool.query('DELETE FROM category WHERE id_category = UUID_TO_BIN(?)', [id])
-      return res.status(200).json({ message: 'Category deleted successfully' })
+        await CategoryModel.deleteCategory(id);
+      return res.status(200).json({ message: 'La categoria se elimino correctamente.' })
     } catch (error) {
       console.log(error)
       return res.status(500).json({ message: 'Internal server error' })
     }
   }
+
 }
