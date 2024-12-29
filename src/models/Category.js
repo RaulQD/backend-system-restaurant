@@ -17,12 +17,9 @@ export class CategoryModel {
 
   static async getCategoryById(id) {
     const [result] = await pool.query('SELECT id_category as id, category_name, category_description FROM category WHERE id_category = ?', [id])
-    const category = result[0]
-
-    return category
+    return result
   }
   static async createCategory(category_name, category_description) {
-
     try {
       await pool.query('INSERT INTO category (category_name, category_description) VALUES (?, ?)', [category_name, category_description])
 

@@ -8,22 +8,22 @@ export class CategoryController {
       const { category_name, category_description } = req.body
 
       // 1- CHECK IF THE CATEGORY ALREADY EXISTS
-      const [existingCategory] = await pool.query('SELECT * FROM category WHERE category_name = ?', [category_name])
-      if (existingCategory.length > 0) {
-        const error = new Error('La categoria ya existe')
+      const existingCategory = await CategoryModel.findCategoryByName(category_name)
+      if (existingCategory) {
+        const error = new Error(`La categoria ${category_name} ya existe`)
         return res.status(400).json({ message: error.message, status: false })
       }
       // 2 - CREATE A NEW CATEGORY
-      const [category] = await pool.query(`INSERT INTO category (category_name, category_description) VALUES (?, ?)`, [category_name, category_description])
-      const categoryId = category.insertId
+      const [result] = await CategoryModel.createCategory(category_name, category_description)
+      const categoryId = result.insertId
 
       // 3 - GET THE NEWLY CREATED CATEGORY
-      const [dishes] = await pool.query('SELECT id_category as id, category_name, category_description FROM category WHERE id_category = ?', [categoryId])
-
+      const [category] = await CategoryModel.getCategoryById(categoryId)
+     
       return res.status(201).json({
         message: 'Categoría creada exitosamente',
         status: true,
-        data: dishes[0]
+        data: category[0]
       });
     } catch (error) {
       console.log(error)
