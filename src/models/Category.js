@@ -17,11 +17,12 @@ export class CategoryModel {
 
   static async getCategoryById(id) {
     const [result] = await pool.query('SELECT id_category as id, category_name, category_description FROM category WHERE id_category = ?', [id])
-    return result
+    return result[0] || null
   }
   static async createCategory(category_name, category_description) {
     try {
-      await pool.query('INSERT INTO category (category_name, category_description) VALUES (?, ?)', [category_name, category_description])
+      const [result] = await pool.query('INSERT INTO category (category_name, category_description) VALUES (?, ?)', [category_name, category_description])
+      return result
 
     } catch (error) {
       return { message: 'Internal server error', status: false }
@@ -38,7 +39,7 @@ export class CategoryModel {
       throw new Error('Error al actualizar la categoria')
     }
   }
-  static async deleteCategory(id_category){
+  static async deleteCategory(id_category) {
     try {
       await pool.query('DELETE FROM category WHERE id_category = ?', [id_category])
     } catch (error) {

@@ -14,16 +14,16 @@ export class CategoryController {
         return res.status(400).json({ message: error.message, status: false })
       }
       // 2 - CREATE A NEW CATEGORY
-      const [result] = await CategoryModel.createCategory(category_name, category_description)
+      const result = await CategoryModel.createCategory(category_name, category_description)
       const categoryId = result.insertId
 
       // 3 - GET THE NEWLY CREATED CATEGORY
-      const [category] = await CategoryModel.getCategoryById(categoryId)
+      const category = await CategoryModel.getCategoryById(categoryId)
      
       return res.status(201).json({
         message: 'Categoría creada exitosamente',
         status: true,
-        data: category[0]
+        data: category
       });
     } catch (error) {
       console.log(error)
