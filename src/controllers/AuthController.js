@@ -90,7 +90,7 @@ export class AuthController {
                 id: user.id,
                 username: user.username,
                 employee: {
-                    employee_id: user.employee_id,
+                    id_employee: user.id_employee,
                     full_name: `${user.names} ${user.last_name}`,
                     profile_picture_url: user.profile_picture_url,
                 },
