@@ -5,7 +5,7 @@ const routes = Router();
 
 
 routes.post('/', OrderController.createOrder)
-routes.post('/add-item', OrderController.addItemToOrder)
+routes.post('/:orderId/items', OrderController.addItemToOrder);
 routes.get('/', OrderController.getOrders)
 routes.get('/kitchen', OrderController.getOrdersForKitchen)
 routes.get('/:orderId', OrderController.getOrderById)
@@ -14,6 +14,5 @@ routes.get('/tables/:tableId/order', OrderController.getOrdersByTableId)
 routes.patch('/:orderId/status', OrderController.updateOrderStatus)
 routes.patch('/:orderId/item/:itemId/status', OrderController.updateOrderItemStatus)
 routes.patch('/:orderId/cancel/:tableId', OrderController.cancelOrder)
-
 
 export default routes;

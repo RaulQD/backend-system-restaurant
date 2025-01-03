@@ -8,7 +8,7 @@ export class OrderModel {
   }
 
   static async getOrderById(id) {
-    const [results] = await pool.query(`SELECT o.id_order, o.employee_id, CONCAT(e.names ,' ', e.last_name) AS names, o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o  JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE o.id_order = ?`, [id])
+    const [results] = await pool.query(`SELECT o.id_order, o.employee_id, CONCAT(e.names ,' ', e.last_name) AS names, o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE o.id_order = ?`, [id])
     const order = results[0]
 
     if (!order) {
@@ -46,15 +46,7 @@ export class OrderModel {
     const [results] = await pool.query(`SELECT o.id_order, o.employee_id, CONCAT(e.names ,' ', e.last_name) AS names, o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o  JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?)`, [order_status]);
     return results;
   }
-  static async getOrderItem(orderId, dishId) {
-    try {
-      const [results] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish as dish_id, d.dishes_name FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ? AND od.dish_id = ?', [orderId, dishId])
-      return results[0]
-    } catch (error) {
-      console.log(error)
-      throw new Error('Error al obtener el item de la orden')
-    }
-  }
+
   static async getOrderIdAndItemId(orderId, itemId) {
     try {
       const [results] = await pool.query('SELECT od.order_id, od.status, o.order_status FROM order_details od INNER JOIN orders o ON od.order_id = o.id_order WHERE od.id_item = ? AND o.id_order = ?', [itemId, orderId]);
@@ -89,16 +81,14 @@ export class OrderModel {
       throw new Error('Error al actualizar el estado del item de la orden');
     }
   }
-  static async updateOrderItemQuantity(orderId, dishId, quantity) {
+  static async updateOrderItemQuantity(orderId, dishId, quantity, subtotal) {
     try {
-      await pool.query('UPDATE order_details SET quantity = ? WHERE order_id = ? AND dish_id = ?', [quantity, orderId, dishId])
+      await pool.query('UPDATE order_details SET quantity = ? , subtotal = ? WHERE order_id = ? AND dish_id = ?', [quantity, subtotal, orderId, dishId])
     } catch (error) {
       console.log(error);
       throw new Error('Error al actualizar la cantidad del item de la orden');
     }
   }
-  static async areAllItemsServed(orderId) {
-    const query = 'SELECT COUNT(*) as pending_items FROM order_details WHERe order_id = ? AND status !=SERVIDO'
-  }
+
 
 }

@@ -14,6 +14,15 @@ export class OrderDetailsModel {
       throw new Error('Error al obtener los items de la orden')
     }
   }
+  static async getOrderItemByDishId(orderId, dish_id) {
+    try {
+      const [results] = await pool.query('SELECT od.id_item, od.quantity, od.subtotal, d.id_dish as dish_id, d.dishes_name FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ? AND od.dish_id = ?', [orderId, dish_id])
+      return results[0]
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al obtener el item de la orden')
+    }
+  }
   static async addOrderItems(orderItemData) {
     const { order_id, dish_id, quantity, unit_price, subtotal, special_requests } = orderItemData
     try {
