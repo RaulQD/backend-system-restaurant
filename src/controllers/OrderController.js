@@ -132,42 +132,11 @@ export class OrderController {
       //CREAR LA ORDEN
       const orderData = { employee_id, table_id }
       const order = await OrderModel.createOrder(orderData)
-      const orderId = order.insertId
-
-      let totalAmount = 0 // Inicializar el total en 0      
-      //AGREGAR LOS ITEMS A LA ORDEN
-      for (const item of items) {
-        //VERIFICAR SI EL PLATO EXISTE
-        const dish = await DishesModel.getDishById(item.dish_id)
-        if (!dish) {
-          const error = new Error(`Plato con ID ${item.dish_id} no encontrado`)
-          return res.status(404).json({ message: error.message, status: false });
-        }
-        //OBTENER EL PRECIO UNITARIO Y CALCULAR EL SUBTOTAL
-        const unitPrice = dish.price;
-        const subtotal = unitPrice * item.quantity;
-        totalAmount += subtotal;
-
-        //SI EL ITEM NO EXISTE, AGREGARLO A LA ORDEN
-        const orderItemData = {
-          order_id: orderId,
-          dish_id: item.dish_id,
-          quantity: item.quantity,
-          unit_price: unitPrice,
-          subtotal,
-          special_requests: item.special_requests || ''
-        }
-        //AGREGAR EL ITEM A LA ORDEN
-        await OrderDetailsModel.addOrderItems(orderItemData)
-      }
-
-
-      //ACTUALIZAR EL TOTAL DE LA ORDEN
-      await OrderModel.updateTotal(orderId, totalAmount)
+      const orderId = order.id_order
       //CAMBIAR EL ESTADO DE LA MESA A OCUPADO
       await TableModel.updateTableStatus(table_id, 'OCUPADO')
 
-      return res.status(201).json({ message: 'Orden creada exitosamente', statu: true, order: { id_order: orderId, table_id: table_id, employe_id: employeeId, total: totalAmount, items }, });
+      return res.status(201).json({ message: 'Orden creada exitosamente', statu: true, order: { id_order: orderId, table_id: table_id, employe_id: employeeId, items } });
 
     } catch (error) {
       console.log(error)
@@ -196,13 +165,10 @@ export class OrderController {
       console.log("dish_id:", dish);
       //VALIDAR SI EL ITEM YA EXISTE EN LA ORDEN PARA ACTUALIZAR LA CANTIDAD
       const existingItem = await OrderDetailsModel.getOrderItemByDishId(orderId, dish_id)
-      let subtotal = dish.price * quantity
-
+      
       if (existingItem) {
-
         // Sumar la cantidad nueva a la existente
         existingItem.quantity += quantity;
-
         // Calcular el nuevo subtotal basado en el precio unitario
         existingItem.subtotal = existingItem.quantity * dish.price;
         // Actualizar en la base de datos
@@ -214,18 +180,15 @@ export class OrderController {
           dish_id,
           quantity,
           unit_price: dish.price,
-          subtotal,
+          subtotal: dish.price * quantity,
           special_requests: special_requests || '',
         }
         await OrderDetailsModel.addOrderItems(orderItemData)
       }
-
-
       // Obtener todos los ítems actuales de la orden
       const orderItems = await OrderDetailsModel.getOrderItems(orderId);
-      const totalAmount = orderItems.reduce((acc, item) => acc + (item.unit_price * item.quantity), 0);
-      const roundedTotal = parseFloat(totalAmount.toFixed(2));
-      await OrderModel.updateTotal(orderId, roundedTotal);
+      const totalAmount = orderItems.reduce((acc, item) => acc + item.subtotal, 0);
+      await OrderModel.updateTotal(orderId, totalAmount);
 
       // res.send('Item agregado a la orden exitosamente');
       return res.status(201).json({ message: 'Item agregado a la orden exitosamente', newTotal: roundedTotal, order: { ...order, items: orderItems } });
