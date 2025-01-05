@@ -120,15 +120,14 @@ export class OrderController {
       if (!existingEmployee) {
         return res.status(404).json({ message: 'Empleado no encontrado', status: false });
       }
-      const tableId = await TableModel.getTableById(table_id)
-      if (!tableId) {
+      const table = await TableModel.getTableById(table_id)
+      if (!table ) {
         return res.status(404).json({ message: 'Mesa no encontrada', status: false });
       }
-      //VALIDAR SI LA MESA ESTÁ OCUPADA
-      const tableStatus = await TableModel.getTableStatus(table_id)
-      if (tableStatus === 'OCUPADO') {
+      if(table.status === 'OCUPADO'){
         return res.status(400).json({ message: 'La mesa ya está ocupada', status: false });
       }
+
       //CREAR LA ORDEN
       const orderData = { employee_id, table_id }
       const order = await OrderModel.createOrder(orderData)

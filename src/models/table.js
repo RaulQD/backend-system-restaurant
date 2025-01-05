@@ -29,7 +29,7 @@ export class TableModel {
   }
 
   static async getTableById(id) {
-    const [results] = await pool.query('SELECT id_table as id, num_table, capacity_table FROM tables WHERE id_table = ?', [id])
+    const [results] = await pool.query('SELECT id_table as id, num_table, capacity_table, status FROM tables WHERE id_table = ?', [id])
     const table = results[0]
 
     return table
