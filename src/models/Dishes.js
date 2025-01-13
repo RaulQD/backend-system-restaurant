@@ -53,7 +53,7 @@ export class DishesModel {
     // Ejecutar la consulta para obtener los empleados con paginación
     const [dishesResult] = await pool.query(query, queryParams)
 
-    // CHECK IF THERE ARE NO RESULTS IN THE QUERY
+    // Verificar si no se encontraron platos
     if (dishesResult.length === 0) {
       const error = new Error('No se encontraron platos con estos criterios de busqueda.')
       error.statusCode = 404;

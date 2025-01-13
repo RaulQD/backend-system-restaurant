@@ -19,7 +19,7 @@ export class CategoryController {
 
       // 3 - GET THE NEWLY CREATED CATEGORY
       const category = await CategoryModel.getCategoryById(categoryId)
-     
+
       return res.status(201).json({
         message: 'Categoría creada exitosamente',
         status: true,
@@ -31,19 +31,16 @@ export class CategoryController {
     }
   }
   static async getCategories(req, res) {
+    // 1 - GET VALUES FROM THE REQUEST QUERY PARAMETERS TO USE FOR FILTERING
+    const { page = 1, limit = 10, keyword = '' } = req.query
+    // 2 - CONVERT THE LIMIT AND PAGE TO NUMBERS
+    const pageNumber = Number(page) || 1
+    const limitNumber = Number(limit) || 10 
     try {
-      // 1 - GET VALUES FROM THE REQUEST QUERY PARAMETERS TO USE FOR FILTERING
-      const { category_name, page = 1, limit = 10, keyword } = req.query
-      // 2 - CONVERT THE LIMIT AND PAGE TO NUMBERS
-      const limitNumber = Number(limit)
-      const pageNumber = Number(page)
-      // 3 - FILTER KEYWORD
-
-      // 4 - USE THE VALUES TO FILTER THE CATEGORIES FROM THE DATABASE
       // 1 - GET ALL GATEGORIES FROM DATABASE
-      const categories = await CategoryModel.getCategories()
+      const categories = await CategoryModel.getCategories(limitNumber, pageNumber, keyword)
       // 2 - RETURN THE CATEGORIES
-      return res.status(200).json(categories)
+      return res.status(200).json(categories || [])
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
@@ -113,7 +110,7 @@ export class CategoryController {
         const error = new Error(`La categoria con el id ${id} no existe`)
         return res.status(404).json({ message: error.message, status: false })
       }
-        await CategoryModel.deleteCategory(id);
+      await CategoryModel.deleteCategory(id);
       return res.status(200).json({ message: 'La categoria se elimino correctamente.' })
     } catch (error) {
       console.log(error)
