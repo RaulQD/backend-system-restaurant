@@ -5,13 +5,19 @@ export class CategoryModel {
     const [result] = await pool.query('SELECT id_category, category_name, category_description FROM category WHERE category_name = ?', [category_name])
     return result[0] || null;
   }
-  static async getCategories(keyword, page = 1, limit = 10) {
+  static async getCategories() {
+    const [result] = await pool.query('SELECT id_category as id, category_name, category_description FROM category')
+    return result
+  }
+
+  static async getCategoriesPaginations(keyword, page = 1, limit = 10) {
     let offset = (page - 1) * limit;
 
     let query = `SELECT id_category as id, category_name, category_description FROM category WHERE 1=1`
     let countQuery = `SELECT COUNT(*) as total FROM category WHERE 1=1`
     const queryParams = []
-
+    
+    //Agregar la búsqueda a la consulta
     if (keyword) {
       query += ` AND LOWER(category_name) LIKE LOWER(CONCAT('%', ?, '%'))`
       countQuery += ` AND LOWER(category_name) LIKE LOWER(CONCAT('%', ?, '%'))`
@@ -22,7 +28,7 @@ export class CategoryModel {
     queryParams.push(limit, offset)
 
     const [countResults] = await pool.query(countQuery, queryParams)
-    const totalCategories = countResults[0].total
+    const totalCategories = countResults[0].total || 0
     if (totalCategories === 0) {
       if (keyword) {
         const error = new Error('No hay categorias registradas con este nombre')
@@ -31,6 +37,7 @@ export class CategoryModel {
       } else {
         const error = new Error('No hay categorias registradas')
         error.status = 404
+        throw error
       }
     }
     //Ejecutar la consulta para obtener las categorias con paginación

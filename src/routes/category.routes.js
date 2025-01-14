@@ -11,6 +11,7 @@ routes.post('/',
   categoryValidation,
   handleInputErrors, CategoryController.createCategory)
 routes.get('/', CategoryController.getCategories)
+routes.get('/all', CategoryController.getCategoriesPagination)
 routes.get('/:id',
   param('id').isInt().withMessage('Invalid category id'),
   CategoryController.getCategoryById)
