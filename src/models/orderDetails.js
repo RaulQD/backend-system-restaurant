@@ -3,8 +3,6 @@ import { pool } from "../config/mysql.js"
 
 export class OrderDetailsModel {
 
-
-
   static async getOrderItems(orderId) {
     try {
       const [results] = await pool.query('SELECT od.id_item, od.dish_id, d.dishes_name, od.quantity, od.unit_price,od.status, od.subtotal, od.special_requests FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [orderId])
@@ -30,6 +28,22 @@ export class OrderDetailsModel {
     } catch (error) {
       console.log(error)
       throw new Error('Error al agregar items a la orden')
+    }
+  }
+  static async decreaseItemQuantity(orderId, dish_id) {
+    try {
+      await pool.query('UPDATE order_details SET quantity = quantity - 1 WHERE order_id = ? AND dish_id = ?', [orderId, dish_id])
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al disminuir la cantidad de un item de la orden')
+    }
+  }
+  static async removeOrderItem(orderId, dish_id) {
+    try {
+      await pool.query('DELETE FROM order_details WHERE order_id = ? AND dish_id = ?', [orderId, dish_id])
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al eliminar item de la orden')
     }
   }
 }
