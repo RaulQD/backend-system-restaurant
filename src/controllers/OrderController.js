@@ -203,7 +203,7 @@ export class OrderController {
         // Calcular el nuevo subtotal basado en el precio unitario
         existingItem.subtotal = existingItem.quantity * dish.price;
         // Actualizar en la base de datos
-        await OrderModel.updateOrderItemQuantity(orderId, dish_id, existingItem.quantity, existingItem.subtotal);
+        await OrderDetailsModel.updateOrderItemQuantity(orderId, dish_id, existingItem.quantity, existingItem.subtotal);
       } else {
         //INSERTAR EL NUEVO ITEM EN LA TABLA DE ORDER_DETAILS
         const orderItemData = {
@@ -234,28 +234,46 @@ export class OrderController {
   static async decreaseItemQuantity(req, res) {
     try {
       const { orderId } = req.params
-      const { dishId,quantity } = req.body
+      const { dishId, quantity } = req.body
       //VALIDAR SI LA ORDEN EXISTE
       const order = await OrderModel.getOrderById(orderId)
       if (!order) {
         return res.status(404).json({ message: 'Orden no encontrada', status: false });
       }
-      //VALIDAR SI EL ITEM DE LA ORDEN EXISTE
-      const orderItem = await OrderDetailsModel.getOrderItemByDishId(orderId, dishId)
+      // Validar si el ítem existe en la orden
+      const orderItem = await OrderDetailsModel.getOrderItemByDishId(orderId, dishId);
       if (!orderItem) {
         return res.status(404).json({ message: 'El plato no existe en la orden', status: false });
       }
-      //DISMINUIR LA CANTIDAD DEL ITEM
-      if (orderItem.quantity > 1) {
-        orderItem.quantity -= quantity;
-        orderItem.subtotal = orderItem.quantity * orderItem.unit_price;        
-        await OrderDetailsModel.updateOrderItemQuantity(orderId, dishId, orderItem.quantity, orderItem.subtotal);
+      //validar si el estado del item esta en preparacion para no poder eliminarlo despues de cierto tiempo
+      if (orderItem.status === 'EN PREPARACION') {
+        const time = new Date(orderItem.created_at)
+        const currentTime = new Date()
+        const diff = currentTime - time
+        const minutes = Math.floor(diff / 60000)
+        if (minutes > 1) {
+          return res.status(400).json({ message: 'No se puede eliminar el item, el plato ya esta en preparación.', status: false });
+        }
       }
+      if (orderItem.quantity > 1) {
+        // Calcular nueva cantidad y subtotal
+        const newQuantity = orderItem.quantity - quantity;
+        const newSubtotal = newQuantity * parseFloat(orderItem.unit_price);
+        // Actualizar la cantidad en la base de datos
+        await OrderDetailsModel.updateOrderItemQuantity(orderId, dishId, newQuantity, newSubtotal);
+
+      } else {
+        // Si la cantidad es 1, eliminar el ítem de la orden
+        await OrderDetailsModel.removeOrderItem(orderId, dishId);
+        return res.status(200).json({ message: 'Item eliminado de la orden exitosamente', status: true });
+      }
+
+
       //ACTUALIZAR EL TOTAL DE LA ORDEN
       const orderItems = await OrderDetailsModel.getOrderItems(orderId)
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
       const updatedTotal = await OrderModel.updateTotal(orderId, totalAmount);
-      
+
       return res.status(200).json({ message: 'Cantidad disminuida exitosamente', newTotal: updatedTotal, order: { ...order, items: orderItems } });
     } catch (error) {
       console.log(error)

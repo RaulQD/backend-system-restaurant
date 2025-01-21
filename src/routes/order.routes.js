@@ -6,7 +6,7 @@ const routes = Router();
 
 routes.post('/', OrderController.createOrder)
 routes.post('/:orderId/items', OrderController.addItemToOrder);
-routes.post('/:orderId/descreaseItem', OrderController.decreaseItemQuantity)
+routes.put('/:orderId/descreaseItem', OrderController.decreaseItemQuantity)
 routes.get('/', OrderController.getOrders)
 routes.get('/kitchen', OrderController.getOrdersForKitchen)
 routes.get('/:orderId', OrderController.getOrderById)
