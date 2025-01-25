@@ -189,11 +189,11 @@ export class OrderController {
     if (!order) {
       return res.status(404).json({ message: 'Orden no encontrada', status: false });
     }
+    const dish = await DishesModel.getDishById(dish_id);
+    if (!dish) {
+      return res.status(404).json({ message: `Plato con ID ${dish_id} no encontrado`, status: false });
+    }
     try {
-      const dish = await DishesModel.getDishById(dish_id);
-      if (!dish) {
-        return res.status(404).json({ message: `Plato con ID ${dish_id} no encontrado`, status: false });
-      }
       //VALIDAR SI EL ITEM YA EXISTE EN LA ORDEN PARA ACTUALIZAR LA CANTIDAD
       const existingItem = await OrderDetailsModel.getOrderItemByDishId(orderId, dish_id)
 
@@ -220,7 +220,13 @@ export class OrderController {
       const orderItems = await OrderDetailsModel.getOrderItems(orderId);
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
       const updatedTotal = await OrderModel.updateTotal(orderId, totalAmount);
-      return res.status(201).json({ message: 'Item agregado a la orden exitosamente', newTotal: updatedTotal, order: { ...order, items: orderItems } });
+      return res.status(201).json({
+        message: 'Item agregado a la orden exitosamente',
+        order: {
+          id_order: orderId, total_amount: updatedTotal,
+          items: orderItems,
+        }
+      });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
@@ -274,7 +280,12 @@ export class OrderController {
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
       const updatedTotal = await OrderModel.updateTotal(orderId, totalAmount);
 
-      return res.status(200).json({ message: 'Cantidad disminuida exitosamente', newTotal: updatedTotal, order: { ...order, items: orderItems } });
+      return res.status(200).json({
+        message: 'Cantidad disminuida exitosamente', order: {
+          id: orderId, total_amount: updatedTotal,
+          items: orderItems,
+        }
+      });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
