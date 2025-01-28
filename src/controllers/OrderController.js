@@ -93,23 +93,20 @@ export class OrderController {
 
   static async getOrdersByTableId(req, res) {
     const { tableId } = req.params
+    const statusAllowed = ['PENDIENTE', 'EN PROCESO', 'SERVIDO']
     try {
       const order = await OrderModel.getOrderActiveForTable(tableId)
       if (!order) {
         const error = new Error('No hay orden activa para esta mesa')
         return res.status(404).json({ message: error.message, status: false });
       }
+      if (!statusAllowed.includes(order.order_status)) {
+        const error = new Error(`No puedes actualizar esta orden. Estado actual '${order.order_status}' no permite cambios.`)
+        return res.status(400).json({ message: error.message, status: false });
+      }
       const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
-      const itemsWithMoreInfo = orderItems.map(item => ({
-        id_item: item.id_item,
-        dish: {
-          id: item.id,
-          name: item.dishes_name
-        },
-        quantity: item.quantity,
-        price: item.price,
-      }))
-      const orderData = { ...order, items: itemsWithMoreInfo }
+
+      const orderData = { ...order, items: orderItems }
       return res.status(200).json(orderData);
     } catch (error) {
       console.log(error)

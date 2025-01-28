@@ -25,7 +25,9 @@ export class RoomsController {
   static async createRoom(req, res) {
     try {
       const room = await RoomsModel.createRoom(req.body)
-      return res.status(201).json({ status: true, message: 'Sala creada exitosamente', data: room })
+      const { insertId } = room
+      const roomCreated = await RoomsModel.getRoomById(insertId)
+      return res.status(201).json({ status: true, message: 'Sala creada exitosamente', data: roomCreated })
     } catch (error) {
       console.log(error)
       return res.status(400).json({

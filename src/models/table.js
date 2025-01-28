@@ -37,21 +37,8 @@ export class TableModel {
 
   static async getTablesByRoomName(room_name) {
     const [results] = await pool.query('SELECT id_table, t.num_table, t.capacity_table, t.status, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE r.room_name = ? ORDER BY t.num_table ASC;', [room_name])
-    if (results.length === 0) {
-      const error = new Error('No se encontraron mesas en la sala')
-      error.statusCode = 404 // Not found
-      throw error
-    }
-    // GET JSON ARRAY OF THE RESULTS
-    const tables = results.map(table => {
-      return {
-        id_table: table.id_table,
-        num_table: table.num_table,
-        capacity_table: table.capacity_table,
-        status: table.status,
-      }
-    })
-    return tables
+
+    return results
   }
   //FUNCIÓN PARA OBTENER SI LA MESA ESTÁ OCUPADA O NO
   static async getTableStatus(id) {

@@ -34,7 +34,7 @@ export class OrderModel {
   }
   static async getOrderActiveForTable(tableId) {
     try {
-      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status = "PENDIENTE"', [tableId])
+      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?)', [tableId, 'PENDIENTE', 'EN PROCESO', 'SERVIDO'])
       return results[0]
     } catch (error) {
       console.log(error)

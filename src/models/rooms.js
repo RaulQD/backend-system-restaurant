@@ -22,7 +22,7 @@ export class RoomsModel {
     return rooms
   }
   static async getRoomById(id) {
-    const [results] = await pool.query('SELECT id_room as id, room_name, num_tables FROM rooms WHERE id_room = UUID_TO_BIN(?)', [id])
+    const [results] = await pool.query('SELECT id_room as id, room_name, num_tables FROM rooms WHERE id_room = ?', [id])
     if (results.length === 0) {
       throw new Error('Sala no encontrada')
     }
@@ -31,23 +31,8 @@ export class RoomsModel {
   static async createRoom(data) {
     const { room_name, num_tables } = data
 
-    //1- CHECK IF THE ROOM NAME ALREADY EXISTS
-    const [existsRoom] = await pool.query('SELECT  id_room, room_name FROM rooms WHERE room_name = ?', [room_name])
-    if (existsRoom.length > 0) {
-      throw new Error('El nombre de la sala ya existe')
-    }
-
-    try {
-      //2- INSERT THE NEW ROOM
-      await pool.query(`INSERT INTO rooms ( room_name, num_tables) VALUES (,?, ?)`, [room_name, num_tables])
-
-    } catch (error) {
-      console.log(error)
-      throw new Error('Error al crear la sala')
-    }
-    const [results] = await pool.query('SELECT id_room aS id, room_name, num_tables FROM rooms WHERE id_room = ?', [uuid])
-
-    return results[0]
+    const [results] = await pool.query(`INSERT INTO rooms ( room_name, num_tables) VALUES (?, ?)`, [room_name, num_tables])
+    return results;
   }
   static async updateRoom(id, data) {
     const { room_name, num_tables } = data

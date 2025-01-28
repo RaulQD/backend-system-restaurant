@@ -52,6 +52,19 @@ export class TableController {
     const { room } = req.query
     try {
       const tables = await TableModel.getTablesByRoomName(room)
+      if (tables.length === 0) {
+        const error = new Error('No se encontraron mesas en la sala')
+        return res.status(404).json({ message: error.message, status: false })
+      }
+      const tablesResponse = tables.map(table => {
+        return {
+          id_table: table.id_table,
+          num_table: table.num_table,
+          capacity_table: table.capacity_table,
+          status: table.status,
+        }
+      })
+
       return res.status(200).json(tables)
     } catch (error) {
       console.log(error)

@@ -5,7 +5,7 @@ export class OrderDetailsModel {
 
   static async getOrderItems(orderId) {
     try {
-      const [results] = await pool.query('SELECT od.id_item, od.dish_id, d.dishes_name, od.quantity, od.unit_price,od.status, od.subtotal, od.special_requests FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [orderId])
+      const [results] = await pool.query('SELECT od.id_item, od.dish_id, d.dishes_name, od.quantity, od.unit_price,od.status, od.subtotal, od.special_requests, d.image_url FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [orderId])
       return results
     } catch (error) {
       console.log(error)
