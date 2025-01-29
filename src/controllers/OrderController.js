@@ -150,6 +150,7 @@ export class OrderController {
         const unitPrice = dish.price
         const subtotal = dish.price * item.quantity
         totalAmount += subtotal
+        
         //INSERTAR EL ITEM EN LA TABLA DE ORDER_DETAILS
         const orderItemData = {
           order_id: orderId,
