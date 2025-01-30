@@ -5,8 +5,9 @@ const routes = Router();
 
 
 routes.post('/', OrderController.createOrder)
-routes.post('/:orderId/add-item', OrderController.addItemToOrder);
-routes.put('/:orderId/descreaseItem', OrderController.decreaseItemQuantity)
+routes.patch('/:orderId/add-item', OrderController.addItemToOrder);
+routes.patch('/:orderId/remove-item', OrderController.removeItemFromOrder);
+routes.patch('/:orderId/descreaseItem', OrderController.decreaseItemQuantity)
 routes.get('/', OrderController.getOrders)
 routes.get('/kitchen', OrderController.getOrdersForKitchen)
 routes.get('/:orderId', OrderController.getOrderById)

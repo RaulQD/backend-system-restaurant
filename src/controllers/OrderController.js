@@ -150,7 +150,7 @@ export class OrderController {
         const unitPrice = dish.price
         const subtotal = dish.price * item.quantity
         totalAmount += subtotal
-        
+
         //INSERTAR EL ITEM EN LA TABLA DE ORDER_DETAILS
         const orderItemData = {
           order_id: orderId,
@@ -255,7 +255,7 @@ export class OrderController {
         const currentTime = new Date()
         const diff = currentTime - time
         const minutes = Math.floor(diff / 60000)
-        if (minutes > 1) {
+        if (minutes > 5) {
           return res.status(400).json({ message: 'No se puede eliminar el item, el plato ya esta en preparación.', status: false });
         }
       }
@@ -271,8 +271,6 @@ export class OrderController {
         await OrderDetailsModel.removeOrderItem(orderId, dishId);
         return res.status(200).json({ message: 'Item eliminado de la orden exitosamente', status: true });
       }
-
-
       //ACTUALIZAR EL TOTAL DE LA ORDEN
       const orderItems = await OrderDetailsModel.getOrderItems(orderId)
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
@@ -312,12 +310,8 @@ export class OrderController {
 
       //ELIMINAR EL ITEM DE LA ORDEN
       await OrderDetailsModel.removeOrderItem(orderId, dishId)
-      // //ACTUALIZAR EL TOTAL DE LA ORDEN
-      // const orderItems = await OrderDetailsModel.getOrderItems(orderId)
-      // const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
       const updatedTotal = await OrderModel.updateTotal(orderId, subtotal);
-
-      res.status(200).json({ message: 'Item eliminado de la orden exitosamente', newTotal: updatedTotal, order: { ...order, items: orderItems } });
+      res.status(200).json({ message: 'Item eliminado de la orden exitosamente', newTotal: updatedTotal, order: { ...order, items: orderItem } });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
