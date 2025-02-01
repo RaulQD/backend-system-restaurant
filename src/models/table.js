@@ -67,8 +67,7 @@ export class TableModel {
       throw new Error('Error al crear la mesa')
     }
   }
-  static async updateTable(id, data) { }
-
+  
   static async updateTableStatus(id, status) {
     try {
       await pool.query('UPDATE tables SET status = ? WHERE id_table = ?', [status, id])

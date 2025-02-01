@@ -15,7 +15,7 @@ export class OrderModel {
       return null;
     }
     // OBTENER LOS ITEMS DE LA ORDEN CON SU ESTADO
-    const [itemsRow] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish, d.dishes_name, od.subtotal, od.status, od.special_requests FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [id])
+    const [itemsRow] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish, d.dishes_name, od.subtotal, od.status FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [id])
     order.items = itemsRow
 
     return order;
@@ -34,7 +34,7 @@ export class OrderModel {
   }
   static async getOrderActiveForTable(tableId) {
     try {
-      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?)', [tableId, 'PENDIENTE', 'EN PROCESO', 'SERVIDO'])
+      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?)', [tableId, 'CREADO','PENDIENTE', 'EN PROCESO', 'SERVIDO'])
       return results[0]
     } catch (error) {
       console.log(error)
@@ -90,5 +90,13 @@ export class OrderModel {
     }
   }
 
+  static async sendOrderToKitchen(orderId) {
+    try {
+      await pool.query('UPDATE orders SET order_status = ? WHERE id_order = ? ',['PENDIENTE', orderId])
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al enviar la orden a cocina');
+    }
+  }
 
 }

@@ -54,7 +54,7 @@ export class OrderController {
   }
   static async getOrdersForKitchen(req, res) {
     try {
-      const orders = await OrderModel.getOrdersByStatus(['PENDIENTE', 'EN PROCESO'])
+      const orders = await OrderModel.getOrdersByStatus(['PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO'])
       if (orders.length === 0) {
         const error = new Error('No hay ordenes pendientes para la cocina.')
         return res.status(404).json({ message: error.message, status: false });
@@ -93,13 +93,14 @@ export class OrderController {
 
   static async getOrdersByTableId(req, res) {
     const { tableId } = req.params
-    const statusAllowed = ['PENDIENTE', 'EN PROCESO', 'SERVIDO']
+    const statusAllowed = ['CREADO', 'PENDIENTE', 'LISTO PARA SERVIR', 'SERVIDO']
     try {
       const order = await OrderModel.getOrderActiveForTable(tableId)
       if (!order) {
         const error = new Error('No hay orden activa para esta mesa')
         return res.status(404).json({ message: error.message, status: false });
       }
+      // const orderId = order.id_order
       if (!statusAllowed.includes(order.order_status)) {
         const error = new Error(`No puedes actualizar esta orden. Estado actual '${order.order_status}' no permite cambios.`)
         return res.status(400).json({ message: error.message, status: false });
@@ -121,14 +122,13 @@ export class OrderController {
     const { employee_id, table_id, items } = req.body
     let totalAmount = 0
     //VALIDAR SI ESTA VACIO EL ITEM
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ message: 'No se puede crear una orden, La orden esta vacia.', status: false });
-    }
+    // if (!Array.isArray(items) || items.length === 0) {
+    //   return res.status(400).json({ message: 'No se puede crear una orden, La orden esta vacia.', status: false });
+    // }
 
     try {
       const existingEmployee = await EmployeeModel.findByEmployeeId(employee_id)
-      const employeeId = existingEmployee.id
-
+      const employeeId = existingEmployee.id_employee
       if (!existingEmployee) {
         return res.status(404).json({ message: 'Empleado no encontrado', status: false });
       }
@@ -136,38 +136,15 @@ export class OrderController {
       if (!tableId) {
         return res.status(404).json({ message: 'Mesa no encontrada', status: false });
       }
-      //CREAR LA ORDEN
+      //CREAR LA ORDEN SIN ITEMS
       const orderData = { employee_id, table_id }
       const order = await OrderModel.createOrder(orderData)
       const orderId = order.insertId
 
-      for (const item of items) {
-        const dish = await DishesModel.getDishById(item.dish_id)
-        if (!dish) {
-          return res.status(404).json({ message: `Plato con ID ${item.dish_id} no encontrado`, status: false });
-        }
-        //CALCULAR EL TOTAL DE LA ORDEN
-        const unitPrice = dish.price
-        const subtotal = dish.price * item.quantity
-        totalAmount += subtotal
-
-        //INSERTAR EL ITEM EN LA TABLA DE ORDER_DETAILS
-        const orderItemData = {
-          order_id: orderId,
-          dish_id: item.dish_id,
-          quantity: item.quantity,
-          unit_price: unitPrice,
-          subtotal,
-          special_requests: item.special_requests || '',
-        }
-        await OrderDetailsModel.addOrderItems(orderItemData)
-      }
-      //ACTUALIZAR EL TOTAL DE LA ORDEN
-      await OrderModel.updateTotal(orderId, totalAmount)
       //CAMBIAR EL ESTADO DE LA MESA A OCUPADO
       await TableModel.updateTableStatus(table_id, 'OCUPADO')
 
-      return res.status(201).json({ message: 'Orden creada exitosamente', statu: true, order: { id_order: orderId, table_id: table_id, employe_id: employeeId, items } });
+      return res.status(201).json({ message: 'Orden creada exitosamente', statu: true, order: { id_order: orderId, table_id: table_id, employe_id: employeeId, items: [] } });
 
     } catch (error) {
       console.log(error)
@@ -181,20 +158,20 @@ export class OrderController {
   //METODO PARA AGREGAR ITEMS A UNA ORDEN YA EXISTENTE
   static async addItemToOrder(req, res) {
     const { orderId } = req.params
-    const { dish_id, quantity, special_requests } = req.body
-    //VALIDAR SI LA ORDEN EXISTE
-    const order = await OrderModel.getOrderById(orderId)
-    if (!order) {
-      return res.status(404).json({ message: 'Orden no encontrada', status: false });
-    }
-    const dish = await DishesModel.getDishById(dish_id);
-    if (!dish) {
-      return res.status(404).json({ message: `Plato con ID ${dish_id} no encontrado`, status: false });
-    }
+    const { dish_id, quantity } = req.body
+
     try {
+      //VALIDAR SI LA ORDEN EXISTE
+      const order = await OrderModel.getOrderById(orderId)
+      if (!order) {
+        return res.status(404).json({ message: 'Orden no encontrada', status: false });
+      }
+      const dish = await DishesModel.getDishById(dish_id);
+      if (!dish) {
+        return res.status(404).json({ message: `Plato con ID ${dish_id} no encontrado`, status: false });
+      }
       //VALIDAR SI EL ITEM YA EXISTE EN LA ORDEN PARA ACTUALIZAR LA CANTIDAD
       const existingItem = await OrderDetailsModel.getOrderItemByDishId(orderId, dish_id)
-
       if (existingItem) {
         // Sumar la cantidad nueva a la existente
         existingItem.quantity += quantity;
@@ -210,7 +187,6 @@ export class OrderController {
           quantity,
           unit_price: dish.price,
           subtotal: dish.price * quantity,
-          special_requests: special_requests || '',
         }
         await OrderDetailsModel.addOrderItems(orderItemData)
       }
@@ -219,9 +195,9 @@ export class OrderController {
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
       const updatedTotal = await OrderModel.updateTotal(orderId, totalAmount);
       return res.status(201).json({
-        message: 'Item agregado a la orden exitosamente',
+        message: 'Plato agregado exitosamente.',
         order: {
-          id_order: orderId, total_amount: updatedTotal,
+          order_id: orderId, total_amount: updatedTotal,
           items: orderItems,
         }
       });
@@ -395,24 +371,50 @@ export class OrderController {
       });
     }
   }
+  static async sendOrderToKitchen(req, res) {
+    try {
+      const { orderId } = req.params
+      //VALIDAR SI LA ORDEN EXISTE
+      const order = await OrderModel.getOrderById(orderId)
+      if (!order) {
+        const error = new Error('Orden no encontrada')
+        return res.status(404).json({ message: error.message, status: false });
+      }
+      if (order.order_status !== 'PENDIENTE' && order.order_status !== 'EN PROCESO') {
+        const error = new Error('La orden se envió a la cocina.')
+        return res.status(400).json({
+          message: error.message, status: false
+        });
+      }
 
+      const orderItems = await OrderDetailsModel.getOrderItems(orderId)
+      if (orderItems.length === 0) {
+        const error = new Error('No hay items en la orden')
+        return res.status(404).json({ message: error.message, status: false });
+      }
+      await OrderModel.updateOrderStatus(orderId, 'EN PROCESO')
+      return res.status(200).json({ message: 'Orden enviada a cocina', status: true });
+
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
   static async cancelOrder(req, res) {
-    const { orderId, tableId } = req.params
-
+    const { orderId } = req.params
     try {
       const order = await OrderModel.getOrderById(orderId)
       if (!order) {
         const error = new Error('Orden no encontrada')
         return res.status(404).json({ message: error.message, status: false });
       }
-      //VALIDAR SI LA MESA PERTENECE A LA ORDEN
-      if (order.table_id !== tableId) {
-        const error = new Error('La mesa no pertenece a la orden')
-        return res.status(400).json({ error: error.message, status: false });
-      }
 
       //VALIDAR SI LA MESA EXISTE
-      const table = await TableModel.getTableById(tableId)
+      const table = await TableModel.getTableById(order.table_id)
       if (!table) {
         const error = new Error('Mesa no encontrada')
         return res.status(404).json({ error: error.message, status: false });
@@ -423,19 +425,13 @@ export class OrderController {
         const error = new Error('La orden ya está cancelada o completada')
         return res.status(400).json({ error: error.message, status: false });
       }
-      //VALIDAR PERMISOS DE USUARIO PARA CANCELAR LA ORDEN, SOLO EL ADMINISTRADOR O EL EMPLEADO QUE CREÓ LA ORDEN PUEDE CANCELARLA
-      // const user = await EmployeeModel.getEmployeeById(req.user.id)
-      // if (user.role.name !== 'administrador' && order.employee_id !== req.user.id) {
-      //   const error = new Error('No tienes permisos para cancelar esta orden')
-      //   return res.status(403).json({ error: error.message, status: false });
-      // }
 
       //USAR PROMISE.ALL PARA EJECUTAR VARIAS CONSULTAS ASÍNCRONAS DE FORMA SIMULTÁNEA
       await Promise.all([
         //CAMBIAR EL ESTADO DE LA ORDEN A CANCELADO
         OrderModel.updateOrderStatus(orderId, 'CANCELADO'),
         //CAMBIAR EL ESTADO DE LA MESA A DISPONIBLE
-        TableModel.updateTableStatus(tableId, 'Disponible')
+        TableModel.updateTableStatus(order.table_id, 'DISPONIBLE')
       ])
 
       return res.status(200).json({ message: 'Orden cancelada exitosamente', status: true });

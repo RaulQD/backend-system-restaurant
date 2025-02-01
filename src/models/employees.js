@@ -22,7 +22,7 @@ export class EmployeeModel {
     return existingDni;
   }
   static async findByEmployeeId(id) {
-    const [employeeResult] = await pool.query(`SELECT id_employee as id, names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = ?`, [id])
+    const [employeeResult] = await pool.query(`SELECT id_employee , names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = ?`, [id])
     const employee = employeeResult[0];
     return employee;
   }
