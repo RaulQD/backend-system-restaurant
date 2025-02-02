@@ -14,7 +14,7 @@ export class OrderDetailsModel {
   }
   static async getOrderItemByDishId(orderId, dish_id) {
     try {
-      const [results] = await pool.query('SELECT od.id_item, od.quantity, od.subtotal, d.id_dish as dish_id, d.dishes_name, od.unit_price, o.created_at, od.status FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish JOIN orders o ON od.order_id = o.id_order WHERE od.order_id = ? AND od.dish_id = ? ', [orderId, dish_id])
+      const [results] = await pool.query('SELECT od.id_item, od.quantity, od.subtotal, d.id_dish as dish_id, d.dishes_name, od.unit_price, o.created_at, od.status FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish JOIN orders o ON od.order_id = o.id_order WHERE od.order_id = ? AND od.dish_id = ? AND od.status != ?', [orderId, dish_id, 'SERVIDO'])
       return results[0]
     } catch (error) {
       console.log(error)

@@ -22,19 +22,18 @@ export class OrderModel {
   }
 
   static async createOrder(orderData) {
-    const { employee_id, table_id } = orderData
+    const { employee_id, table_id, order_status } = orderData
     try {
-      const [result] = await pool.query('INSERT INTO orders (employee_id, table_id, total) VALUES (?,?,0)', [employee_id, table_id])
+      const [result] = await pool.query('INSERT INTO orders (employee_id, table_id, total,order_status) VALUES (?,?,0)', [employee_id, table_id, order_status])
       return result
     } catch (error) {
       console.log(error)
       throw new Error('Error al crear la orden')
-
     }
   }
   static async getOrderActiveForTable(tableId) {
     try {
-      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?)', [tableId, 'CREADO','PENDIENTE', 'EN PROCESO', 'SERVIDO'])
+      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'SERVIDO'])
       return results[0]
     } catch (error) {
       console.log(error)
@@ -92,7 +91,7 @@ export class OrderModel {
 
   static async sendOrderToKitchen(orderId) {
     try {
-      await pool.query('UPDATE orders SET order_status = ? WHERE id_order = ? ',['PENDIENTE', orderId])
+      await pool.query('UPDATE orders SET order_status = ? WHERE id_order = ? ', ['PENDIENTE', orderId])
     } catch (error) {
       console.log(error);
       throw new Error('Error al enviar la orden a cocina');

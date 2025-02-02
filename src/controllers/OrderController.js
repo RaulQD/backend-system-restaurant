@@ -93,7 +93,7 @@ export class OrderController {
 
   static async getOrdersByTableId(req, res) {
     const { tableId } = req.params
-    const statusAllowed = ['CREADO', 'PENDIENTE', 'LISTO PARA SERVIR', 'SERVIDO']
+    const statusAllowed = ['CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO']
     try {
       const order = await OrderModel.getOrderActiveForTable(tableId)
       if (!order) {
@@ -119,12 +119,7 @@ export class OrderController {
     }
   }
   static async createOrder(req, res) {
-    const { employee_id, table_id, items } = req.body
-    let totalAmount = 0
-    //VALIDAR SI ESTA VACIO EL ITEM
-    // if (!Array.isArray(items) || items.length === 0) {
-    //   return res.status(400).json({ message: 'No se puede crear una orden, La orden esta vacia.', status: false });
-    // }
+    const { employee_id, table_id } = req.body
 
     try {
       const existingEmployee = await EmployeeModel.findByEmployeeId(employee_id)
@@ -321,7 +316,7 @@ export class OrderController {
   static async updateOrderItemStatus(req, res) {
     const { orderId, itemId } = req.params
     const { status } = req.body
-    const ALLOWED_STATUSES = ['PENDIENTE', 'EN PREPARACION', 'SERVIDO', 'CANCELADO'];
+    const ALLOWED_STATUSES = ['PENDIENTE', 'EN PREPARACION', 'LISTO PARA SERVIR', 'SERVIDO', 'CANCELADO'];
 
     if (!status) {
       const error = new Error('El estado es requerido.')
@@ -380,21 +375,22 @@ export class OrderController {
         const error = new Error('Orden no encontrada')
         return res.status(404).json({ message: error.message, status: false });
       }
-      if (order.order_status !== 'PENDIENTE' && order.order_status !== 'EN PROCESO') {
-        const error = new Error('La orden se envió a la cocina.')
+      //VALIDAR SI LA ORDEN YA FUE ENVIADA A LA COCINA
+      if (order.order_status === 'EN PROCESO') {
+        const error = new Error('La orden ya esta en la cocina.')
         return res.status(400).json({
           message: error.message, status: false
         });
       }
-
+      //VALIDAR SI LA ORDEN TIENE ITEMS.
       const orderItems = await OrderDetailsModel.getOrderItems(orderId)
       if (orderItems.length === 0) {
         const error = new Error('No hay items en la orden')
         return res.status(404).json({ message: error.message, status: false });
       }
-      await OrderModel.updateOrderStatus(orderId, 'EN PROCESO')
-      return res.status(200).json({ message: 'Orden enviada a cocina', status: true });
-
+      //CAMBIAR EL ESTADO DE LA ORDEN A EN PENDIENTE
+      await OrderModel.updateOrderStatus(orderId, 'PENDIENTE')
+      return res.status(200).json({ message: 'Orden enviada a cocina.', status: true });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
