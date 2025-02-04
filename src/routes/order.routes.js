@@ -16,6 +16,6 @@ routes.get('/:orderId', OrderController.getOrderById)
 routes.patch('/:orderId/status', OrderController.updateOrderStatus)
 routes.patch('/:orderId/item/:itemId/status', OrderController.updateOrderItemStatus)
 routes.patch('/:orderId/cancel', OrderController.cancelOrder)
-routes.patch('/:orderId/send-kitchen', OrderController.sendOrderToKitchen)
-
+routes.patch('/:orderId/send-to-kitchen', OrderController.sendOrderToKitchen)
+routes.get('/:orderId/summary', OrderController.getOrderSummary)
 export default routes;

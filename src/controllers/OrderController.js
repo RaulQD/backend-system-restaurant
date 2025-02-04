@@ -54,7 +54,7 @@ export class OrderController {
   }
   static async getOrdersForKitchen(req, res) {
     try {
-      const orders = await OrderModel.getOrdersByStatus(['PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO'])
+      const orders = await OrderModel.getOrdersByStatus(['PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'LISTO PARA PAGAR', 'SERVIDO', 'COMPLETADO'])
       if (orders.length === 0) {
         const error = new Error('No hay ordenes pendientes para la cocina.')
         return res.status(404).json({ message: error.message, status: false });
@@ -93,7 +93,7 @@ export class OrderController {
 
   static async getOrdersByTableId(req, res) {
     const { tableId } = req.params
-    const statusAllowed = ['CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO']
+    const statusAllowed = ['CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'COMPLETADO']
     try {
       const order = await OrderModel.getOrderActiveForTable(tableId)
       if (!order) {
@@ -221,15 +221,17 @@ export class OrderController {
         return res.status(404).json({ message: 'El plato no existe en la orden', status: false });
       }
       //validar si el estado del item esta en preparacion para no poder eliminarlo despues de cierto tiempo
-      if (orderItem.status === 'EN PREPARACION') {
+      if (orderItem.status === 'EN PREPARACION' || orderItem.status === 'LISTO PARA SERVIR' || orderItem.status === 'SERVIDO') {
         const time = new Date(orderItem.created_at)
         const currentTime = new Date()
         const diff = currentTime - time
         const minutes = Math.floor(diff / 60000)
-        if (minutes > 5) {
-          return res.status(400).json({ message: 'No se puede eliminar el item, el plato ya esta en preparación.', status: false });
+        if (minutes > 1) {
+          const error = new Error('No se puede eliminar, el tiempo de modificación ha expirado.')
+          return res.status(400).json({ message: error.message, status: false });
         }
       }
+
       if (orderItem.quantity > 1) {
         // Calcular nueva cantidad y subtotal
         const newQuantity = orderItem.quantity - quantity;
@@ -316,16 +318,14 @@ export class OrderController {
   static async updateOrderItemStatus(req, res) {
     const { orderId, itemId } = req.params
     const { status } = req.body
-    const ALLOWED_STATUSES = ['PENDIENTE', 'EN PREPARACION', 'LISTO PARA SERVIR', 'SERVIDO', 'CANCELADO'];
-
+    const ALLOWED_STATUS = ['PENDIENTE', 'EN PREPARACION', 'LISTO PARA SERVIR', 'SERVIDO', 'CANCELADO'];
     if (!status) {
       const error = new Error('El estado es requerido.')
       return res.status(400).json({ message: error.message, status: false });
     }
-
     try {
       //VALIDAR SI EL ESTADO PROPORCIONADO ES VÁLIDO
-      if (!ALLOWED_STATUSES.includes(status)) {
+      if (!ALLOWED_STATUS.includes(status)) {
         const error = new Error('El estado proporcionado no es válido.')
         return res.status(400).json({ message: error.message, status: false });
       }
@@ -342,20 +342,17 @@ export class OrderController {
       //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN SERVIDOS
       const orderItems = await OrderDetailsModel.getOrderItems(orderId)
       const allItemsServed = orderItems.every(item => item.status.trim().toUpperCase() === 'SERVIDO')
-      console.log('Items de la orden:', orderItems); // Debug: Ver qué items se encuentran
-      console.log('Todos los items servidos:', allItemsServed); // Debug: Ver si todos los items están servidos
       if (status === 'EN PREPARACION') {
         await OrderModel.updateOrderStatus(orderId, 'EN PROCESO')
       }
-
-      if (allItemsServed) {
-        await OrderModel.updateOrderStatus(orderId, 'COMPLETADO')
-        //CAMBIAR EL ESTADO DE LA MESA A DISPONIBLE
-        const order = await OrderModel.getOrderById(orderId)
-        await TableModel.updateTableStatus(order.table_id, 'DISPONIBLE')
+      if (status === 'LISTO PARA SERVIR') {
+        await OrderModel.updateOrderStatus(orderId, 'LISTO PARA SERVIR')
       }
 
+      if (allItemsServed) {
+        await OrderModel.updateOrderStatus(orderId, 'LISTO PARA PAGAR')
 
+      }
       return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true, order_id: orderAndItemExits.order_id });
     } catch (error) {
       console.log(error)
@@ -376,7 +373,7 @@ export class OrderController {
         return res.status(404).json({ message: error.message, status: false });
       }
       //VALIDAR SI LA ORDEN YA FUE ENVIADA A LA COCINA
-      if (order.order_status === 'EN PROCESO') {
+      if (order.order_status === 'PENDIENTE' || order.order_status === 'EN PROCESO' || order.order_status === 'LISTO PARA SERVIR' || order.order_status === 'SERVIDO') {
         const error = new Error('La orden ya esta en la cocina.')
         return res.status(400).json({
           message: error.message, status: false
@@ -401,36 +398,30 @@ export class OrderController {
     }
   }
   static async cancelOrder(req, res) {
-    const { orderId } = req.params
+    const orderStatus = ['CREADO', 'PENDIENTE']
     try {
+      const { orderId } = req.params
+      const { itemId } = req.body
       const order = await OrderModel.getOrderById(orderId)
       if (!order) {
         const error = new Error('Orden no encontrada')
         return res.status(404).json({ message: error.message, status: false });
       }
-
-      //VALIDAR SI LA MESA EXISTE
-      const table = await TableModel.getTableById(order.table_id)
-      if (!table) {
-        const error = new Error('Mesa no encontrada')
-        return res.status(404).json({ error: error.message, status: false });
-      }
-
-      //VALIDAR SI LA ORDEN YA ESTÁ CANCELADA O COMPLETADA
-      if (order.order_status === 'CANCELADO' || order.order_status === 'COMPLETADO') {
-        const error = new Error('La orden ya está cancelada o completada')
-        return res.status(400).json({ error: error.message, status: false });
+      if (!orderStatus.includes(order.order_status)) {
+        const error = new Error('No puedes cancelar esta orden. Estado actual no permite cambios.')
+        return res.status(400).json({ message: error.message, status: false });
       }
 
       //USAR PROMISE.ALL PARA EJECUTAR VARIAS CONSULTAS ASÍNCRONAS DE FORMA SIMULTÁNEA
       await Promise.all([
+        OrderDetailsModel.cancelOrderItems(orderId, 'CANCELADO'),
         //CAMBIAR EL ESTADO DE LA ORDEN A CANCELADO
         OrderModel.updateOrderStatus(orderId, 'CANCELADO'),
         //CAMBIAR EL ESTADO DE LA MESA A DISPONIBLE
         TableModel.updateTableStatus(order.table_id, 'DISPONIBLE')
       ])
 
-      return res.status(200).json({ message: 'Orden cancelada exitosamente', status: true });
+      return res.status(200).json({ message: 'Orden cancelada exitosamente.', status: true });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
@@ -439,6 +430,31 @@ export class OrderController {
         status: false
       });
     }
+  }
+  static async getOrderSummary(req, res) {
+    const { orderId } = req.params
+    try {
+      const order = await OrderModel.getOrderById(orderId)
+      if (!order) {
+        const error = new Error('Orden no encontrada')
+        return res.status(404).json({ message: error.message, status: false });
+      }
+      const orderSummary = await OrderModel.getOrderSummary(orderId)
+      if (orderSummary.length === 0) {
+        const error = new Error('No hay items en la orden')
+        return res.status(404).json({ message: error.message, status: false });
+      }
+
+      return res.status(200).json({ orderId, orderItemsSummary: orderSummary });
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message,
+        status: false
+      });
+    }
+
   }
 
 }

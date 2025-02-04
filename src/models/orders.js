@@ -3,7 +3,7 @@ import { pool } from "../config/mysql.js";
 
 export class OrderModel {
   static async getOrders() {
-    const [results] = await pool.query(`SELECT o.id_order, o.employee_id, CONCAT(e.names ,' ', e.last_name) AS names, o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o  JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table`)
+    const [results] = await pool.query(`SELECT o.id_order, o.employee_id, e.names, e.last_name , o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o  JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table`)
     return results
   }
 
@@ -22,9 +22,9 @@ export class OrderModel {
   }
 
   static async createOrder(orderData) {
-    const { employee_id, table_id, order_status } = orderData
+    const { employee_id, table_id } = orderData
     try {
-      const [result] = await pool.query('INSERT INTO orders (employee_id, table_id, total,order_status) VALUES (?,?,0)', [employee_id, table_id, order_status])
+      const [result] = await pool.query('INSERT INTO orders (employee_id, table_id, total) VALUES (?,?,0)', [employee_id, table_id])
       return result
     } catch (error) {
       console.log(error)
@@ -33,7 +33,7 @@ export class OrderModel {
   }
   static async getOrderActiveForTable(tableId) {
     try {
-      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'SERVIDO'])
+      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?,?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'COMPLETADO'])
       return results[0]
     } catch (error) {
       console.log(error)
@@ -95,6 +95,15 @@ export class OrderModel {
     } catch (error) {
       console.log(error);
       throw new Error('Error al enviar la orden a cocina');
+    }
+  }
+  static async getOrderSummary(orderId) {
+    try {
+      const [results] = await pool.query('SELECT od.dish_id, SUM(od.quantity) as total_items FROM order_details WHERE od.order_id = ? GROUP BY od.dish_id', [orderId])
+      return results
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener el resumen de la orden  ');
     }
   }
 

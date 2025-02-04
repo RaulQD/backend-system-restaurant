@@ -46,4 +46,12 @@ export class OrderDetailsModel {
       throw new Error('Error al eliminar item de la orden')
     }
   }
+  static async cancelOrderItems(orderId, status) {
+    try {
+      await pool.query('UPDATE order_details SET status = ? WHERE order_id = ?', [status, orderId])
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al eliminar item de la orden')
+    }
+  }
 }
