@@ -33,7 +33,7 @@ export class OrderModel {
   }
   static async getOrderActiveForTable(tableId) {
     try {
-      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?,?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'COMPLETADO'])
+      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?,?,?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'LISTO PARA PAGAR', 'COMPLETADO'])
       return results[0]
     } catch (error) {
       console.log(error)
@@ -99,7 +99,7 @@ export class OrderModel {
   }
   static async getOrderSummary(orderId) {
     try {
-      const [results] = await pool.query('SELECT od.dish_id, SUM(od.quantity) as total_items FROM order_details WHERE od.order_id = ? GROUP BY od.dish_id', [orderId])
+      const [results] = await pool.query('SELECT od.id_item, od.dish_id, d.dishes_name, SUM(od.subtotal) as subtotal, SUM(od.quantity) as quantity, od.unit_price FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ? GROUP BY od.dish_id, od.unit_price ,d.dishes_name,od.id_item', [orderId])
       return results
     } catch (error) {
       console.log(error);

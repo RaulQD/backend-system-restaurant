@@ -93,7 +93,7 @@ export class OrderController {
 
   static async getOrdersByTableId(req, res) {
     const { tableId } = req.params
-    const statusAllowed = ['CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'COMPLETADO']
+    const statusAllowed = ['CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'LISTO PARA PAGAR', 'COMPLETADO']
     try {
       const order = await OrderModel.getOrderActiveForTable(tableId)
       if (!order) {
@@ -167,21 +167,23 @@ export class OrderController {
       }
       //VALIDAR SI EL ITEM YA EXISTE EN LA ORDEN PARA ACTUALIZAR LA CANTIDAD
       const existingItem = await OrderDetailsModel.getOrderItemByDishId(orderId, dish_id)
+
       if (existingItem) {
         // Sumar la cantidad nueva a la existente
-        existingItem.quantity += quantity;
+        const newQuantity = Number(existingItem.quantity) + Number(quantity);
         // Calcular el nuevo subtotal basado en el precio unitario
-        existingItem.subtotal = existingItem.quantity * dish.price;
+        const newSubtotal = newQuantity * Number(existingItem.unit_price);
         // Actualizar en la base de datos
-        await OrderDetailsModel.updateOrderItemQuantity(orderId, dish_id, existingItem.quantity, existingItem.subtotal);
+        await OrderDetailsModel.updateOrderItemQuantity(existingItem.id_item, newQuantity, newSubtotal);
+
       } else {
-        //INSERTAR EL NUEVO ITEM EN LA TABLA DE ORDER_DETAILS
+        //INSERTAR UN NUEVO ITEM A LA ORDEN SI NO EXISTE
         const orderItemData = {
           order_id: orderId,
           dish_id,
-          quantity,
-          unit_price: dish.price,
-          subtotal: dish.price * quantity,
+          quantity: Number(quantity),
+          unit_price: Number(dish.price),
+          subtotal: Number(dish.price) * Number(quantity),
         }
         await OrderDetailsModel.addOrderItems(orderItemData)
       }
@@ -209,27 +211,23 @@ export class OrderController {
   static async decreaseItemQuantity(req, res) {
     try {
       const { orderId } = req.params
-      const { dishId, quantity } = req.body
+      const { itemId, quantity } = req.body
       //VALIDAR SI LA ORDEN EXISTE
       const order = await OrderModel.getOrderById(orderId)
       if (!order) {
         return res.status(404).json({ message: 'Orden no encontrada', status: false });
       }
-      // Validar si el ítem existe en la orden
-      const orderItem = await OrderDetailsModel.getOrderItemByDishId(orderId, dishId);
+
+      // Validar si el ítem existe en la orden y si su estado es PENDIENTE
+      const orderItem = await OrderDetailsModel.getOrderItemById(itemId);
       if (!orderItem) {
         return res.status(404).json({ message: 'El plato no existe en la orden', status: false });
       }
-      //validar si el estado del item esta en preparacion para no poder eliminarlo despues de cierto tiempo
-      if (orderItem.status === 'EN PREPARACION' || orderItem.status === 'LISTO PARA SERVIR' || orderItem.status === 'SERVIDO') {
-        const time = new Date(orderItem.created_at)
-        const currentTime = new Date()
-        const diff = currentTime - time
-        const minutes = Math.floor(diff / 60000)
-        if (minutes > 1) {
-          const error = new Error('No se puede eliminar, el tiempo de modificación ha expirado.')
-          return res.status(400).json({ message: error.message, status: false });
-        }
+      console.log('Item obtenido:', orderItem);
+
+      // VALIDAR QUE NO SE MODIFIQUEN ITEMS SERVIDOS
+      if (['SERVIDO', 'LISTO PARA SERVIR', 'EN PREPARACION', 'CANCELADO'].includes(orderItem.status.toUpperCase().trim())) {
+        return res.status(400).json({ message: 'No se puede modificar el ítem porque su estado no permite cambios.', status: false });
       }
 
       if (orderItem.quantity > 1) {
@@ -237,11 +235,11 @@ export class OrderController {
         const newQuantity = orderItem.quantity - quantity;
         const newSubtotal = newQuantity * parseFloat(orderItem.unit_price);
         // Actualizar la cantidad en la base de datos
-        await OrderDetailsModel.updateOrderItemQuantity(orderId, dishId, newQuantity, newSubtotal);
+        await OrderDetailsModel.updateOrderItemQuantity(orderItem.id_item, newQuantity, newSubtotal);
 
       } else {
         // Si la cantidad es 1, eliminar el ítem de la orden
-        await OrderDetailsModel.removeOrderItem(orderId, dishId);
+        await OrderDetailsModel.removeOrderItem(orderItem.id_item);
         return res.status(200).json({ message: 'Item eliminado de la orden exitosamente', status: true });
       }
       //ACTUALIZAR EL TOTAL DE LA ORDEN
@@ -282,7 +280,7 @@ export class OrderController {
       const { subtotal } = orderItem;
 
       //ELIMINAR EL ITEM DE LA ORDEN
-      await OrderDetailsModel.removeOrderItem(orderId, dishId)
+      await OrderDetailsModel.removeOrderItem(orderItem.id_item)
       const updatedTotal = await OrderModel.updateTotal(orderId, subtotal);
       res.status(200).json({ message: 'Item eliminado de la orden exitosamente', newTotal: updatedTotal, order: { ...order, items: orderItem } });
     } catch (error) {
@@ -373,7 +371,7 @@ export class OrderController {
         return res.status(404).json({ message: error.message, status: false });
       }
       //VALIDAR SI LA ORDEN YA FUE ENVIADA A LA COCINA
-      if (order.order_status === 'PENDIENTE' || order.order_status === 'EN PROCESO' || order.order_status === 'LISTO PARA SERVIR' || order.order_status === 'SERVIDO') {
+      if (order.order_status === 'PENDIENTE' || order.order_status === 'EN PROCESO' || order.order_status === 'LISTO PARA SERVIR' || order.order_status === 'LISTO PARA PAGAR') {
         const error = new Error('La orden ya esta en la cocina.')
         return res.status(400).json({
           message: error.message, status: false
@@ -439,13 +437,13 @@ export class OrderController {
         const error = new Error('Orden no encontrada')
         return res.status(404).json({ message: error.message, status: false });
       }
-      const orderSummary = await OrderModel.getOrderSummary(orderId)
-      if (orderSummary.length === 0) {
+      const orderItems = await OrderModel.getOrderSummary(orderId)
+      if (orderItems.length === 0) {
         const error = new Error('No hay items en la orden')
         return res.status(404).json({ message: error.message, status: false });
       }
 
-      return res.status(200).json({ orderId, orderItemsSummary: orderSummary });
+      return res.status(200).json({ orderId, orderItems });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
@@ -454,7 +452,6 @@ export class OrderController {
         status: false
       });
     }
-
   }
 
 }
