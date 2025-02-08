@@ -94,7 +94,7 @@ export class OrderModel {
       return null;
     }
     // OBTENER LOS ITEMS DE LA ORDEN CON SU ESTADO
-    const [itemsRow] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish, d.dishes_name, od.subtotal, od.status FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [id])
+    const [itemsRow] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish, d.dishes_name, od.unit_price, od.subtotal, od.status FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [id])
     order.items = itemsRow
 
     return order;
