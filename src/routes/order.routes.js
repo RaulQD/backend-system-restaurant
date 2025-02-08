@@ -18,4 +18,5 @@ routes.patch('/:orderId/status', OrderController.updateOrderStatus)
 routes.patch('/:orderId/item/:itemId/status', OrderController.updateOrderItemStatus)
 routes.patch('/:orderId/cancel', OrderController.cancelOrder)
 routes.patch('/:orderId/send-to-kitchen', OrderController.sendOrderToKitchen)
+routes.post('/:orderId/payment', OrderController.processPaymentOrder)
 export default routes;

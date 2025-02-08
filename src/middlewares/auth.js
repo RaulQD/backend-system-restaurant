@@ -14,8 +14,10 @@ export const validateToken = async (req, res, next) => {
   const bearer = req.headers.authorization;
   if (!bearer) {
     const error = new Error(ERROR_MESSAGES.USER_NOT_FOUND);
-    error.statusCode = 401;
-    return next(error);
+    return res.status(401).json({
+      message: error.message,
+      status: false
+    })
   }
   const [, token] = bearer.split(' ');
   if (!token) {
