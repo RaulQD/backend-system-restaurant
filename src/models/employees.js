@@ -4,7 +4,7 @@ import { ClientError } from "../utils/error.js";
 
 export class EmployeeModel {
   static async findByEmail(email) {
-    const [existingEmail] = await pool.query('SELECT * FROM employees WHERE email = ?', [email]);
+    const [existingEmail] = await pool.query('SELECT id_employee, email FROM employees WHERE email = ?', [email]);
     if (existingEmail.length > 0) {
       const error = new Error('El email ya existe')
       error.statusCode = 400;
@@ -110,7 +110,7 @@ export class EmployeeModel {
   }
   static async getEmployeeById(id) {
 
-    const [employeeResult] = await pool.query(`SELECT e.id_employee as id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = ?`, [id])
+    const [employeeResult] = await pool.query(`SELECT e.id_employee as id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, e.profile_picture_url, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name, u.username, u.password, u.id_user FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = ?`, [id])
 
     if (employeeResult.length === 0) {
       const error = new Error('Empleado no encontrado');
@@ -130,9 +130,11 @@ export class EmployeeModel {
       salary: employee.salary,
       hire_date: employee.hire_date,
       status: employee.status,
-      role: {
-        name: employee.role_name
-      }
+      profile_picture_url: employee.profile_picture_url,
+      role_name: employee.role_name,
+      username: employee.username,
+      password: employee.password,
+      userId: employee.id_user
     }
 
   }
@@ -142,42 +144,25 @@ export class EmployeeModel {
     return employeeResult;
   }
 
-  static async updateEmployee(uuid, data) {
-    const { names, last_name, dni, email, phone, address, salary } = data
-    // Verificar si el empleado existe
-    const employee = await this.getEmployeeById(uuid);
-    if (!employee) {
-      const error = new Error('Empleado no encontrado');
-      error.statusCode = 404;
-      throw error;
+  static async updateEmployee(idEmployee, data) {
+    const { names, last_name, dni, email, phone, address, salary, status, profile_picture_url } = data
+    try {
+      await pool.query(`UPDATE employees SET names = ?, last_name = ?, dni = ?, email = ?, phone = ?, address = ?, salary = ?, status = ?, profile_picture_url = ? WHERE id_employee = ?`, [names, last_name, dni, email, phone, address, salary, status, profile_picture_url, idEmployee]);
+    } catch (error) {
+      console.error('Error al actualizar el empleado:', error); // Más detalles en consola
+      throw new Error('Error al actualizar el empleado')
     }
-    //VERIFICAR SI EL EMAIL YA EXISTE
-    const existingEmail = await this.findByEmail(email);
-    if (existingEmail) {
-      const error = new Error('El email ya está en uso')
-      error.statusCode = 400;
-      throw error;
-    }
-
-    const [employeeResult] = await pool.query(`UPDATE employees SET names = ?, last_name = ?, dni = ?, email = ?, phone = ?, address = ?, salary = ? WHERE id_employee = UUID_TO_BIN(?)`, [names, last_name, dni, email, phone, address, salary, uuid]);
-    if (employeeResult.affectedRows === 0) {
-      const error = new Error('No se pudo actualizar el empleado');
-      error.statusCode = 400;
-      throw error; // Lanza error si no se afectaron filas
-    }
-    return employeeResult;
   }
 
   static async deleteEmployee(uuid) {
 
+    try {
+      const [employeeResult] = await pool.query(`UPDATE employees SET status = 'no activo' WHERE id_employee = ?`, [uuid]);
+      return employeeResult;
 
-    const [employeeResult] = await pool.query(`UPDATE employees SET status = 'no activo' WHERE id_employee = UUID_TO_BIN(?)`, [uuid]);
-
-    if (employeeResult.affectedRows === 0) {
-      const error = new Error('Empleado no encontrado');
-      error.statusCode = 404;
-      throw error;
+    } catch (error) {
+      console.error('Error al eliminar el empleado:', error); // Más detalles en consola
+      throw new Error('Error al eliminar el empleado')
     }
-    return employeeResult;
   }
 }

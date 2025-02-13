@@ -5,30 +5,36 @@ export class OrderModel {
   static async getOrders(status, keyword, startDate, endDate, page = 1, limit = 10) {
     let offset = (page - 1) * limit;
 
-    let query = `SELECT o.id_order, e.id_employee, e.names, e.last_name, t.id_table, t.num_table , o.order_status, o.total, o.created_at, o.updated_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE 1=1`	// Consulta para obtener las ordenes
+    let query = `SELECT o.id_order, e.id_employee, e.names, e.last_name, t.id_table, t.num_table , o.order_status,o.order_number, o.total, o.created_at, o.updated_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE 1=1`	// Consulta para obtener las ordenes
 
     let countQuery = `SELECT COUNT(*) as total FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE 1=1`	// Consulta para contar el número total de ordenes
 
     const queryParams = []	// Parámetros de la consulta
+    const countParams = []; // Parámetros de la consulta de conteo
     if (keyword) {
-      query += ` AND (LOWER(CONCAT(e.names, ' ', e.last_name)) LIKE LOWER(CONCAT('%', ?, '%')))`
-      countQuery += ` AND (LOWER(CONCAT(e.names, ' ', e.last_name)) LIKE LOWER(CONCAT('%', ?, '%')))`
-      queryParams.push(keyword)
+      query += ` AND (LOWER(CONCAT(e.names, ' ', e.last_name)) LIKE LOWER(CONCAT('%', ?, '%'))) 
+                      OR o.order_number LIKE CONCAT('%', ?, '%')`
+      countQuery += ` AND (LOWER(CONCAT(e.names, ' ', e.last_name)) LIKE LOWER(CONCAT('%', ?, '%'))) 
+                          OR o.order_number LIKE CONCAT('%', ?, '%')`
+      queryParams.push(keyword, keyword);
+      countParams.push(keyword, keyword);
     }
     if (status) {
       query += ` AND o.order_status = ?`
       countQuery += ` AND o.order_status = ?`
-      queryParams.push(status)
+      queryParams.push(status);
+      countParams.push(status);
     }
     if (startDate && endDate) {
       query += ` AND o.created_at BETWEEN ? AND ?`
       countQuery += ` AND o.created_at BETWEEN ? AND ?`
-      queryParams.push(startDate, endDate)
+      queryParams.push(startDate, endDate);
+      countParams.push(startDate, endDate);
     }
     query += ` LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
 
-    const [countResults] = await pool.query(countQuery, queryParams)
+    const [countResults] = await pool.query(countQuery, countParams)
     const totalOrders = countResults[0].total;
     if (totalOrders === 0) {
       if (status) {
@@ -44,7 +50,7 @@ export class OrderModel {
         error.statusCode = 404;
         throw error
       } else {
-        const error = new Error('No se encontraron ordenes.');
+        const error = new Error('No se encontraron ordenes completados o canceladas.');
         error.statusCode = 404;
         throw error;
       }
@@ -70,6 +76,7 @@ export class OrderModel {
           num_table: order.num_table
         },
         order_status: order.order_status,
+        order_number: order.order_number,
         total: order.total,
         created_at: order.created_at,
         updated_at: order.updated_at
@@ -99,11 +106,19 @@ export class OrderModel {
 
     return order;
   }
-
-  static async createOrder(orderData) {
-    const { employee_id, table_id } = orderData
+  static async getLastNumberOrder() {
     try {
-      const [result] = await pool.query('INSERT INTO orders (employee_id, table_id, total) VALUES (?,?,0)', [employee_id, table_id])
+      const [results] = await pool.query('SELECT order_number FROM orders  ORDER BY id_order DESC LIMIT 1')
+      return results.length ? results[0] : null
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al obtener el último número de orden')
+    }
+  }
+  static async createOrder(orderData) {
+    const { employee_id, table_id, order_number } = orderData
+    try {
+      const [result] = await pool.query('INSERT INTO orders (employee_id, table_id, order_number, total) VALUES (?,?,?,0)', [employee_id, table_id, order_number])
       return result
     } catch (error) {
       console.log(error)
@@ -112,7 +127,7 @@ export class OrderModel {
   }
   static async getOrderActiveForTable(tableId) {
     try {
-      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?,?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'LISTO PARA PAGAR'])
+      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status,order_number, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?,?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'LISTO PARA PAGAR'])
       return results[0] || null // Devuelve la orden activa o null si no hay orden activa
     } catch (error) {
       console.log(error)
@@ -121,8 +136,13 @@ export class OrderModel {
   }
 
   static async getOrdersByStatus(order_status) {
-    const [results] = await pool.query(`SELECT o.id_order, o.employee_id, CONCAT(e.names ,' ', e.last_name) AS names, o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o  JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?)`, [order_status]);
-    return results;
+    try {
+      const [results] = await pool.query(`SELECT o.id_order,o.order_number, o.employee_id, e.names , e.last_name , o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o  JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?)`, [order_status]);
+      return results;
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al obtener las ordenes por estado');
+    }
   }
 
   static async getOrderIdAndItemId(orderId, itemId) {
@@ -172,7 +192,6 @@ export class OrderModel {
       throw new Error('Error al actualizar la cantidad del item de la orden');
     }
   }
-
   static async sendOrderToKitchen(orderId) {
     try {
       await pool.query('UPDATE orders SET order_status = ? WHERE id_order = ? ', ['PENDIENTE', orderId])

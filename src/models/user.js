@@ -46,5 +46,15 @@ export class UserModel {
     }
     return userResult;
   }
+  //ACTUALZAR LA CONTRASEÑA DEL USUARIO
+  static async updatePassword(userId, password) {
+    try {
+      const [result] = await pool.query('UPDATE users SET password = ? WHERE id_user = ?', [password, userId])
 
+      return result;
+    } catch (error) {
+      console.error('Error en updatePassword:', error.message);
+      throw new Error(error.message || 'Error interno del servidor');
+    }
+  }
 }

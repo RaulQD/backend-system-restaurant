@@ -16,7 +16,7 @@ routes.get('/:dishId',
   param('dishId').isInt().withMessage('Invalid dishes id'),
   handleInputErrors,
   DishesController.getDishById)
-routes.put('/:dishId', upload.single('image_url'),
+routes.put('/:dishId', upload.single('image'),
   param('dishId').isInt().withMessage('Invalid dishes id'),
   dishValidation,
   handleInputErrors,

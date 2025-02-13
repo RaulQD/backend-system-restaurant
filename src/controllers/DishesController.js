@@ -87,14 +87,18 @@ export class DishesController {
         }
       }
       let image_url = existingDish.image_url;
-      console.log('Imagen anterior', image_url)
       // Validación manual de la imagen
       if (req.file) {
         //ELIMNAR LA IMAGEN ANTERIOR en cloudinary
         if (existingDish.image_url) {
           const public_id = existingDish.image_url.split('/').pop().split('.')[0];
-          await cloudinary.uploader.destroy(`dishes/${public_id}`);
           console.log('Eliminando imagen anterior', public_id);
+          const destroyResponse = await cloudinary.uploader.destroy(`dishes/${public_id}`);
+          if (destroyResponse.result === 'ok') {
+            const error = new Error('Error al eliminar la imagen anterior');
+            return res.status(400).json({ message: error.message, status: false });
+          }
+
         }
         //SUBIR LA NUEVA IMAGEN
         const result = await cloudinary.uploader.upload(`data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
@@ -133,7 +137,7 @@ export class DishesController {
         const error = new Error('Plato no encontrado')
         return res.status(404).json({ message: error.message, status: false })
       }
-      if(existingDish.available === 'NO DISPONIBLE'){
+      if (existingDish.available === 'NO DISPONIBLE') {
         const error = new Error('El plato ya está eliminado')
         return res.status(400).json({ message: error.message, status: false })
       }
@@ -151,7 +155,7 @@ export class DishesController {
   static async restoredDish(req, res) {
     const { dishId } = req.params
     try {
-       const existingDish = await DishesModel.getDishById(dishId);
+      const existingDish = await DishesModel.getDishById(dishId);
       if (!existingDish) {
         const error = new Error('Plato no encontrado')
         return res.status(404).json({ message: error.message, status: false })
