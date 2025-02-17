@@ -1,17 +1,18 @@
 import { body, query } from "express-validator";
+import { EmployeeModel } from "../models/employees.js";
 
 
 export const validateQueryEmployee = [
   query('keyword')
-  .optional()
-  .isString().withMessage('El nombre debe ser un cadena de texto.')
-  .not()
-  .isNumeric().withMessage('El nombre no puede ser un número.'),
+    .optional()
+    .isString().withMessage('El nombre debe ser un cadena de texto.')
+    .not()
+    .isNumeric().withMessage('El nombre no puede ser un número.'),
   query('status')
-  .optional()
-  .isString().withMessage('El estado debe ser un cadena de texto.')
-  .not()
-  .isNumeric().withMessage('El estado no puede ser un número.'),
+    .optional()
+    .isString().withMessage('El estado debe ser un cadena de texto.')
+    .not()
+    .isNumeric().withMessage('El estado no puede ser un número.'),
 ]
 
 export const employeeValidation = [
@@ -54,3 +55,22 @@ export const employeeValidation = [
     .isDate().withMessage('La fecha de contratación no es válida.')
     .trim(),
 ]
+
+
+export const validateEmployeeExist = async (req, res, next) => {
+  try {
+    const { employeeId } = req.body;
+
+    const existingEmployee = await EmployeeModel.getEmployeeById(employeeId);
+    if (!existingEmployee) {
+      const error = new Error('Empleado no encontrado.');
+      return res.status(404).json({ message: error.message, status: false })
+    }
+    req.existingEmployee = existingEmployee;
+    next();
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: 'Error interno del servidor', status: false })
+  }
+}

@@ -8,7 +8,11 @@ export class RoomsController {
       return res.status(200).json(rooms)
     } catch (error) {
       console.log(error)
-      return res.status(500).json({ message: error.message, status: false })
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
     }
   }
   static async getRoomById(req, res) {

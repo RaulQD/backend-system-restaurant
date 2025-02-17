@@ -22,11 +22,13 @@ export class RoomsModel {
     return rooms
   }
   static async getRoomById(id) {
-    const [results] = await pool.query('SELECT id_room as id, room_name, num_tables FROM rooms WHERE id_room = ?', [id])
-    if (results.length === 0) {
-      throw new Error('Sala no encontrada')
+    try {
+      const [results] = await pool.query('SELECT id_room as id, room_name, num_tables FROM rooms WHERE id_room = ?', [id])
+      return results[0]
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al buscar la sala')
     }
-    return results[0]
   }
   static async createRoom(data) {
     const { room_name, num_tables } = data

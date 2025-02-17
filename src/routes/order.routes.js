@@ -1,22 +1,103 @@
 import Router from 'express';
 import { OrderController } from '../controllers/OrderController.js';
+import { authorizeRole, validateToken } from '../middlewares/auth.js';
+import { handleInputErrors } from '../middlewares/validation.js';
+import { param } from 'express-validator';
+import { orderValidation, validateOrderActiveForTable, validateOrderExist } from '../middlewares/order.js';
+import { validateEmployeeExist } from '../middlewares/employee.js';
+import { validateTableExist } from '../middlewares/table.js';
+import { validateDishExist } from '../middlewares/dish.js';
 
 const routes = Router();
 
 
-routes.post('/', OrderController.createOrder)
-routes.patch('/:orderId/add-item', OrderController.addItemToOrder);
-routes.patch('/:orderId/remove-item', OrderController.removeItemFromOrder);
-routes.patch('/:orderId/decrease-quantity', OrderController.decreaseItemQuantity)
+routes.post('/',
+  validateToken, 
+  handleInputErrors,
+  authorizeRole(['administrador', 'mesero']), 
+  OrderController.createOrder)
+routes.patch('/:orderId/add-item',
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateOrderExist,
+  orderValidation,
+  validateToken,
+  handleInputErrors,
+  authorizeRole(['administrador', 'mesero']),
+  OrderController.addItemToOrder);
+routes.patch('/:orderId/remove-item', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateToken, 
+  handleInputErrors,
+  authorizeRole(['administrador', 'mesero']), 
+  OrderController.removeItemFromOrder);
+routes.patch('/:orderId/decrease-quantity', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateOrderExist,
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']), 
+  handleInputErrors,
+  OrderController.decreaseItemQuantity)
 routes.get('/', OrderController.getOrders)
-routes.get('/kitchen', OrderController.getOrdersForKitchen)
-routes.get('/active/:tableId', OrderController.getOrdersByTableId)
-routes.get('/:orderId/items', OrderController.getOrderItems)
-routes.get('/:orderId', OrderController.getOrderById)
-routes.get('/:orderId/summary', OrderController.getOrderSummary)
-routes.patch('/:orderId/status', OrderController.updateOrderStatus)
-routes.patch('/:orderId/item/:itemId/status', OrderController.updateOrderItemStatus)
-routes.patch('/:orderId/cancel', OrderController.cancelOrder)
-routes.patch('/:orderId/send-to-kitchen', OrderController.sendOrderToKitchen)
-routes.post('/:orderId/payment', OrderController.processPaymentOrder)
+routes.get('/kitchen', 
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']), 
+  OrderController.getOrdersForKitchen)
+routes.get('/active/:tableId',
+  param('tableId').isInt().withMessage('El id de la mesa no es valido.'),
+  validateOrderActiveForTable,
+  validateToken,
+  authorizeRole(['administrador', 'mesero']),
+  handleInputErrors,
+  OrderController.getOrderByTableId)
+routes.get('/:orderId/items', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']),
+  handleInputErrors,
+  OrderController.getOrderItems)
+routes.get('/:orderId', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateOrderExist,
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']), 
+  handleInputErrors,
+  OrderController.getOrderById)
+routes.get('/:orderId/summary', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']), 
+  handleInputErrors,  
+  OrderController.getOrderSummary)
+routes.patch('/:orderId/status', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']), 
+  handleInputErrors, 
+  OrderController.updateOrderStatus)
+routes.patch('/:orderId/item/:itemId/status', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  param('itemId').isInt().withMessage('El id del item no es valido.'),
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']), 
+  handleInputErrors,
+  OrderController.updateOrderItemStatus)
+routes.patch('/:orderId/cancel', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']), 
+  handleInputErrors,
+  OrderController.cancelOrder)
+routes.patch('/:orderId/send-to-kitchen', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']),
+  handleInputErrors, 
+  OrderController.sendOrderToKitchen)
+routes.post('/:orderId/payment', 
+  param('orderId').isInt().withMessage('El id de la orden no es valido.'),
+  validateToken, 
+  authorizeRole(['administrador', 'mesero']), 
+  handleInputErrors,
+  OrderController.processPaymentOrder)
+
 export default routes;

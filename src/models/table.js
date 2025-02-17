@@ -6,33 +6,88 @@ export class TableModel {
     const [results] = await pool.query('SELECT * FROM tables WHERE id_table = ?', [id])
     return results[0]
   }
+  static async fingByTableNumber(num_table) {
+    try {
+      const [results] = await pool.query('SELECT id_table, num_table,capacity_table FROM tables WHERE num_table = ?', [num_table])
+      return results[0]
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al buscar la mesa')
+    }
+  }
 
-  static async getTables(limit, offset) {
-    const [tablesResult] = await pool.query('SELECT id_table as id, num_table, capacity_table, r.id_room , r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room ORDER BY num_table ASC LIMIT ? OFFSET ? ', [+limit, +offset])
+  static async getTables(room, page = 1, limit = 10) {
+    const offset = (page - 1) * limit
+
+    let query = `SELECT id_table as id, num_table, capacity_table, r.id_room, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE 1=1 `
+    let countQuery = `SELECT COUNT(*) AS count FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE 1=1`
 
 
-    const [countResults] = await pool.query('SELECT COUNT(*) AS count FROM tables')
+    const queryParams = []
+    const countParams = []
 
-    //GET JSON ARRAY OF THE RESULTS
-    const result = tablesResult.map(tables => {
+    if (room) {
+      query += ` AND r.room_name = ?`
+      countQuery += ` AND r.room_name = ?`
+      queryParams.push(room)
+      countParams.push(room)
+    }
+    query += ` LIMIT ? OFFSET ?`
+    queryParams.push(limit, offset)
+
+    const [countResults] = await pool.query(countQuery, countParams)
+    const totalTables = countResults[0].count
+    if (totalTables === 0) {
+      if (room) {
+        const error = new Error(`No se encontraron mesas en la sala ${room}.`)
+        error.statusCode = 404
+        throw error
+      } else {
+        const error = new Error(`No se encontraron mesas.`)
+        error.statusCode = 404
+        throw error
+      }
+    }
+    const countQueryParams = [...queryParams]
+    const [results] = await pool.query(query, countQueryParams)
+    if (results.length === 0) {
+      const error = new Error('No se encontraron mesas con los criterios de busquedas.')
+      error.statusCode = 404
+      throw error
+    }
+    const tables = results.map(table => {
       return {
-        id: tables.id,
-        num_tables: tables.num_table,
-        capacity_table: tables.capacity_table,
+        id: table.id,
+        num_table: table.num_table,
+        capacity_table: table.capacity_table,
         room: {
-          id: tables.id_room,
-          room_name: tables.room_name
+          id_room: table.id_room,
+          room_name: table.room_name
         }
       }
     })
-    return { result, countResult: countResults[0]?.count };
+
+    return { results: tables, pagination: { page, limit, totalTables } };
   }
 
-  static async getTableById(id) {
-    const [results] = await pool.query('SELECT id_table as id, num_table, capacity_table FROM tables WHERE id_table = ?', [id])
-    const table = results[0]
-
-    return table
+  static async getTableById(tableId) {
+    try {
+      const [results] = await pool.query('SELECT t.id_table, t.num_table, t.capacity_table, r.id_room, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE id_table = ?', [tableId])
+      if (results.length === 0) return null;
+      const table = results[0];
+      return {
+        id_table: table.id_table,
+        num_table: table.num_table,
+        capacity_table: table.capacity_table,
+        room: {
+          id_room: table.id_room,
+          room_name: table.room_name
+        }
+      };
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al obtener la mesa')
+    }
   }
 
   static async getTablesByRoomName(room_name) {
@@ -46,28 +101,29 @@ export class TableModel {
     return results[0].status
   }
 
-  static async createTable(data) {
-    const { room_name, num_table, capacity_table } = data
-    // 1- GET THE UUID OF THE ROOM
-    const [roomResult] = await pool.query('SELECT id_room as id FROM rooms WHERE room_name = ?', [room_name])
-    if (roomResult.length === 0) {
-      throw new Error('La sala no existe')
-    }
-    const [{ id }] = roomResult
+  static async createTable(data, roomId) {
+    const { num_table, capacity_table } = data
 
     try {
       // 3- INSERT THE NEW TABLE
-      const [result] = await pool.query(`INSERT INTO tables ( num_table, capacity_table, room_id) VALUES (?,?,?)`, [num_table, capacity_table, id])
-      const tableId = result.insertId
-      // 4- GET THE NEW TABLE
-      const [results] = await pool.query('SELECT id_table as id, num_table, capacity_table FROM tables WHERE id_table = ?', [tableId])
-      return results[0]
+      const [result] = await pool.query(`INSERT INTO tables ( num_table, capacity_table, room_id) VALUES (?,?,?)`, [num_table, capacity_table, roomId])
+
+      return result;
     } catch (error) {
       console.log(error)
       throw new Error('Error al crear la mesa')
     }
   }
-  
+  static async updateTable(tableId, data) {
+    const { num_table, capacity_table, room_id } = data
+    try {
+      await pool.query('UPDATE tables SET num_table = ?, capacity_table = ?, room_id = ? WHERE id_table = ?', [num_table, capacity_table, room_id, tableId])
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al actualizar la mesa')
+    }
+  }
+
   static async updateTableStatus(id, status) {
     try {
       await pool.query('UPDATE tables SET status = ? WHERE id_table = ?', [status, id])

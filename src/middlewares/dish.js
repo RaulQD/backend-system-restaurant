@@ -1,4 +1,5 @@
 import { body } from "express-validator";
+import { DishesModel } from "../models/Dishes.js";
 
 export const dishValidation = [
   body('dishes_name')
@@ -13,3 +14,22 @@ export const dishValidation = [
     .isFloat({ gt: 0 }).withMessage('El precio no es válido. Debe ser un número positivo.'),
   body('category_name').notEmpty().withMessage('La categoria es requerida'),
 ]
+
+
+export const validateDishExist = async (req, res, next) => {
+  const { dish_id } = req.body;
+  const dishIdParams = req.params.dishId;
+  const dishId = dish_id || dishIdParams;
+  try {
+    const dish = await DishesModel.getDishById(dishId);
+    if (!dish) {
+      const error = new Error('El plato no existe');
+      return res.status(404).json({ message: error.message, status: false });
+    }
+    req.dish = dish;
+    next();
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: 'Error interno del plato', status: false });
+  }
+}

@@ -36,24 +36,7 @@ export class EmployeeController {
       res.status(error.statusCode).json({ error: error.message, status: false })
     }
   }
-  // static async updateEmployee(req, res) {
-  //   const { employeeId } = req.params;
-  //   const { names, last_name, dni, email, phone, address, salary } = req.body;
-
-  //   try {
-  //     // 4- UPDATE THE EMPLOYEE
-  //     await EmployeeModel.updateEmployee(employeeId, { names, last_name, dni, email, phone, address, salary, status })
-  //     return res.json({ message: 'Empleado actualizado correctamente', status: true })
-  //   } catch (error) {
-  //     console.error('Error en updateEmployee:', error.message);
-  //     const statusCode = error.statusCode || 500; // Si no hay statusCode, se usa 500
-  //     return res.status(statusCode).json({
-  //       message: error.message || 'Error interno del servidor',
-  //       status: false
-  //     });
-  //   }
-  // }
-
+  
   static async updateEmployee(req, res) {
     const { employeeId } = req.params;
     const { names, last_name, dni, email, phone, address, salary, password, status } = req.body;

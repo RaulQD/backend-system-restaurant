@@ -95,7 +95,7 @@ export class EmployeeModel {
         status: employee.status,
         profile_picture_url: employee.profile_picture_url,
         role: {
-          name: employee.role_name
+          role_name: employee.role_name
         }
       }
     })
@@ -112,36 +112,20 @@ export class EmployeeModel {
 
     const [employeeResult] = await pool.query(`SELECT e.id_employee as id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, e.profile_picture_url, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name, u.username, u.password, u.id_user FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = ?`, [id])
 
-    if (employeeResult.length === 0) {
-      const error = new Error('Empleado no encontrado');
-      error.statusCode = 404;
-      throw error;
-    }
     const employee = employeeResult[0];
     //GET JSON ARRAY OF THE RESULTS
-    return {
-      id: employee.id,
-      names: employee.names,
-      last_name: employee.last_name,
-      dni: employee.dni,
-      email: employee.email,
-      phone: employee.phone,
-      address: employee.address,
-      salary: employee.salary,
-      hire_date: employee.hire_date,
-      status: employee.status,
-      profile_picture_url: employee.profile_picture_url,
-      role_name: employee.role_name,
-      username: employee.username,
-      password: employee.password,
-      userId: employee.id_user
-    }
+    return employee
 
   }
   static async createEmployee(data, userId) {
     const { names, last_name, dni, email, phone, address, profile_picture_url, hire_date, salary } = data
-    const [employeeResult] = await pool.query(`INSERT INTO employees (names, last_name, dni, email, phone, address, profile_picture_url, salary, hire_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [names, last_name, dni, email, phone, address, profile_picture_url, parseFloat(salary), hire_date, userId]);
+    try {
+      const [employeeResult] = await pool.query(`INSERT INTO employees (names, last_name, dni, email, phone, address, profile_picture_url, salary, hire_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [names, last_name, dni, email, phone, address, profile_picture_url, parseFloat(salary), hire_date, userId]);
     return employeeResult;
+    } catch (error) {
+      console.error('Error al crear el empleado:', error); // Más detalles en consola
+      throw new Error('Error al crear el empleado')
+    }
   }
 
   static async updateEmployee(idEmployee, data) {

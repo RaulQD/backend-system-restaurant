@@ -13,4 +13,13 @@ export class RolModel {
   static async assignRoleToUser(user_id, id_rol) {
     await pool.query('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [user_id, id_rol]);
   }
+  static async getRoles() {
+    try {
+      const [result] = await pool.query('SELECT id_rol, role_name FROM roles');
+      return result;
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al obtener los roles');
+    }
+  }
 }
