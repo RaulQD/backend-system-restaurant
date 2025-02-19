@@ -19,7 +19,7 @@ export class TableModel {
   static async getTables(room, page = 1, limit = 10) {
     const offset = (page - 1) * limit
 
-    let query = `SELECT id_table as id, num_table, capacity_table, r.id_room, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE 1=1 `
+    let query = `SELECT t.id_table, t.num_table, t.capacity_table, r.id_room, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE 1=1 `
     let countQuery = `SELECT COUNT(*) AS count FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE 1=1`
 
 
@@ -32,6 +32,9 @@ export class TableModel {
       queryParams.push(room)
       countParams.push(room)
     }
+    
+    query += ` ORDER BY id_table ASC`;
+
     query += ` LIMIT ? OFFSET ?`
     queryParams.push(limit, offset)
 
@@ -57,7 +60,7 @@ export class TableModel {
     }
     const tables = results.map(table => {
       return {
-        id: table.id,
+        id_table: table.id_table,
         num_table: table.num_table,
         capacity_table: table.capacity_table,
         room: {
@@ -73,17 +76,9 @@ export class TableModel {
   static async getTableById(tableId) {
     try {
       const [results] = await pool.query('SELECT t.id_table, t.num_table, t.capacity_table, r.id_room, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE id_table = ?', [tableId])
-      if (results.length === 0) return null;
+      
       const table = results[0];
-      return {
-        id_table: table.id_table,
-        num_table: table.num_table,
-        capacity_table: table.capacity_table,
-        room: {
-          id_room: table.id_room,
-          room_name: table.room_name
-        }
-      };
+      return table
     } catch (error) {
       console.log(error)
       throw new Error('Error al obtener la mesa')
@@ -107,7 +102,7 @@ export class TableModel {
     try {
       // 3- INSERT THE NEW TABLE
       const [result] = await pool.query(`INSERT INTO tables ( num_table, capacity_table, room_id) VALUES (?,?,?)`, [num_table, capacity_table, roomId])
-
+      console.log("Resultado de inserción:", result); // 👀 Verifica que insertId esté presente
       return result;
     } catch (error) {
       console.log(error)

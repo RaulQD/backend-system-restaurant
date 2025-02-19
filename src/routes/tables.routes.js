@@ -8,7 +8,6 @@ import { param, query } from "express-validator";
 const routes = Router()
 
 routes.get('/', TableController.getTables)
-
 routes.post('/', tableValidation, handleInputErrors, TableController.createTable)
 routes.get('/findTablesByRoom',
   query('room')
@@ -20,7 +19,7 @@ routes.get('/findTablesByRoom',
 routes.patch('/:id/status', TableController)
 routes.put('/:tableId',
   param('tableId')
-    .isInt().withMessage('El id de la mesa debe ser un número entero  '),
+    .isInt().withMessage('El id de la mesa debe ser un número entero'),
   tableValidation, handleInputErrors, TableController.updateTable)
 routes.get('/:tableId',
   param('tableId')

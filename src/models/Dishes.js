@@ -11,7 +11,7 @@ export class DishesModel {
     let offset = (page - 1) * limit;
 
     // Consulta para obtener los platos
-    let query = `SELECT id_dish as id, dishes_name, dishes_description, price, image_url, available, c.id_category AS id_category, c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE 1=1`
+    let query = `SELECT id_dish, dishes_name, dishes_description, price, image_url, available, c.id_category AS id_category, c.category_name, c.category_description FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE 1=1`
 
     // Consulta para contar el número total de platos
     let countQuery = `SELECT COUNT(*) as total FROM dishes d JOIN category c ON d.category_id = c.id_category WHERE 1=1`
@@ -29,6 +29,9 @@ export class DishesModel {
       countQuery += ` AND c.category_name = ?`
       queryParams.push(category)
     }
+    // Agregar ORDER BY antes de la paginación
+    query += ` ORDER BY id_dish ASC`;
+
     query += ` LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
 
@@ -63,7 +66,7 @@ export class DishesModel {
     //GET JSON ARRAY OF THE RESULTS
     const results = dishesResult.map(dish => {
       return {
-        id: dish.id,
+        id: dish.id_dish,
         dishes_name: dish.dishes_name,
         dishes_description: dish.dishes_description,
         price: dish.price,

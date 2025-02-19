@@ -30,7 +30,7 @@ export class EmployeeModel {
 
     let offset = (page - 1) * limit;
 
-    let query = `SELECT id_employee as id, e.names, e.last_name, e.profile_picture_url, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1`
+    let query = `SELECT e.id_employee, e.names, e.last_name, e.profile_picture_url, e.salary, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1`
 
     // Consulta para contar el número total de empleados
     let countQuery = `SELECT COUNT(*) as total FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE 1=1
@@ -48,6 +48,8 @@ export class EmployeeModel {
       countQuery += ` AND e.status = ?`
       queryParams.push(status)
     }
+    // Agregar ORDER BY antes de la paginación
+    query += ` ORDER BY id_employee ASC`;
     // Agregar paginación
     query += ` LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
@@ -87,7 +89,7 @@ export class EmployeeModel {
 
     const result = employeeResult.map((employee) => {
       return {
-        id: employee.id,
+        id: employee.id_employee,
         names: employee.names,
         last_name: employee.last_name,
         salary: employee.salary,
@@ -121,7 +123,7 @@ export class EmployeeModel {
     const { names, last_name, dni, email, phone, address, profile_picture_url, hire_date, salary } = data
     try {
       const [employeeResult] = await pool.query(`INSERT INTO employees (names, last_name, dni, email, phone, address, profile_picture_url, salary, hire_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [names, last_name, dni, email, phone, address, profile_picture_url, parseFloat(salary), hire_date, userId]);
-    return employeeResult;
+      return employeeResult;
     } catch (error) {
       console.error('Error al crear el empleado:', error); // Más detalles en consola
       throw new Error('Error al crear el empleado')

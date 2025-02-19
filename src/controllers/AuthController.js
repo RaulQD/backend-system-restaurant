@@ -40,7 +40,7 @@ export class AuthController {
 
     }
     static async createAccount(req, res) {
-        const { dni, email, username, password, role_name, } = req.body
+        const { dni, email, username, password, role_name } = req.body
 
         try {
 

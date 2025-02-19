@@ -29,7 +29,17 @@ export class TableController {
         const error = new Error('Mesa no encontrada')
         return res.status(404).json({ message: error.message, status: false })
       }
-      return res.status(200).json(table)
+      const tableResponse = {
+        id_table: table.id_table,
+        num_table: table.num_table,
+        capacity_table: table.capacity_table,
+        status: table.status,
+        room: {
+          id: table.id_room,
+          room_name: table.room_name
+        }
+      }
+      return res.status(200).json(tableResponse)
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
@@ -77,18 +87,18 @@ export class TableController {
         const error = new Error('La mesa ya esta registrada.')
         return res.status(400).json({ message: error.message, status: false })
       }
-      const room = await RoomsModel.getRoomById(room_id)
-      if (!room) {
-        const error = new Error('La sala no existe')
-        return res.status(404).json({ message: error.message, status: false })
-      }
-
-      const data = { num_table, capacity_table, room_id }
-      const tableCreated = await TableModel.createTable(data)
-
-      const table = await TableModel.getTableById(tableCreated.insertId)
-
-      return res.status(201).json({ message: 'Mesa creada exitosamente', status: true, data: table })
+       // Verificar si la sala existe
+       const room = await RoomsModel.getRoomById(room_id);
+       if (!room) {
+         return res.status(404).json({ message: 'La sala no existe.', status: false });
+       }
+ 
+       // Crear la mesa
+       const tableCreated = await TableModel.createTable({ num_table, capacity_table }, room_id);
+       // Obtener la mesa recién creada
+       const table = await TableModel.getTableById(tableCreated.insertId);
+ 
+      return res.status(201).json({ message: 'Mesa creada exitosamente', status: true, table })
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500

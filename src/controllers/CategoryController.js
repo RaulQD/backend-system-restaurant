@@ -11,7 +11,7 @@ export class CategoryController {
       const existingCategory = await CategoryModel.findCategoryByName(category_name)
       if (existingCategory) {
         const error = new Error(`La categoria ${category_name} ya existe`)
-        return res.status(400).json({ message: error.message, status: false })
+        return res.status(409).json({ message: error.message, status: false })
       }
       // 2 - CREATE A NEW CATEGORY
       const result = await CategoryModel.createCategory(category_name, category_description)

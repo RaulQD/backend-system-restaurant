@@ -4,7 +4,9 @@ import { TableModel } from "../models/table.js";
 export const tableValidation = [
   body('num_table')
     .notEmpty().withMessage('El número de mesa es requerido')
-    .isInt().withMessage('El número de mesa debe ser un número entero'),
+    .isString().withMessage('La mesa debe ser una cadena de texto.')
+    .isLength({ min: 3 }).withMessage('La mesa debe tener al menos 3 caracteres.')
+    .trim(),
   body('capacity_table')
     .notEmpty().withMessage('La capacidad de la mesa es requerida')
     .isInt().withMessage('La capacidad de la mesa debe ser un número entero'),
