@@ -1,5 +1,4 @@
 import { pool } from "../config/mysql.js";
-import { ClientError } from "../utils/error.js";
 
 
 export class EmployeeModel {
@@ -112,7 +111,7 @@ export class EmployeeModel {
   }
   static async getEmployeeById(id) {
 
-    const [employeeResult] = await pool.query(`SELECT e.id_employee as id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, e.profile_picture_url, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name, u.username, u.password, u.id_user FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = ?`, [id])
+    const [employeeResult] = await pool.query(`SELECT e.id_employee as id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, e.profile_picture_url, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name, u.username, u.password, u.id_user as user_id FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = ?`, [id])
 
     const employee = employeeResult[0];
     //GET JSON ARRAY OF THE RESULTS
@@ -147,7 +146,6 @@ export class EmployeeModel {
       return employeeResult;
 
     } catch (error) {
-      console.error('Error al eliminar el empleado:', error); // Más detalles en consola
       throw new Error('Error al eliminar el empleado')
     }
   }

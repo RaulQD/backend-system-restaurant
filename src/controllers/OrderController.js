@@ -3,6 +3,7 @@ import { EmployeeModel } from "../models/employees.js";
 import { OrderDetailsModel } from "../models/orderDetails.js";
 import { OrderModel } from "../models/orders.js";
 import { TableModel } from "../models/table.js";
+import { generateOrderNumber } from "../utils/orders/orderHelper.js";
 
 export class OrderController {
   static async getOrders(req, res) {
@@ -16,7 +17,6 @@ export class OrderController {
       }
       return res.status(200).json(orders || []);
     } catch (error) {
-      console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
@@ -34,7 +34,6 @@ export class OrderController {
       return res.status(200).json(orderItems);
     }
     catch (error) {
-      console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
@@ -71,7 +70,6 @@ export class OrderController {
 
       return res.status(200).json(ordersData);
     } catch (error) {
-      console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
@@ -123,28 +121,10 @@ export class OrderController {
     const { employee_id, table_id } = req.body
     try {
 
-      //obtener el ultimo número de orden de la base de datos
+      //obtener el siguiente número de orden
       const lastOrder = await OrderModel.getLastNumberOrder()
-      let newOrderNumber = 'FH-000001'
-      let prefix = 'FH'
-
-      if (lastOrder) {
-        //EXTRAER EL PREFIJO Y EL NUMERO DE ORDEN
-        const [lastPrefix, lastNumberStr] = lastOrder.order_number.split('-')
-
-        const lastNumber = parseFloat(lastNumberStr, 10)
-        //INCREMENTAR EL NUMERO DE ORDEN
-        let nextNumber = lastNumber + 1
-        //SI EL NUMERO LLEGA AL LIMITE DE 6 DIGITOS, INCREMENTAR EL PREFIJO
-        if (nextNumber > 999999) {
-          nextNumber = 1 //REINICIAR EL NUMERO
-          prefix = `FH${Number(lastPrefix.replace('FH', '') || 1) + 1}` //INCREMENTAR EL PREFIJO
-        } else {
-          prefix = lastPrefix
-        }
-        //FORMATEAR EL NUMERO DE ORDEN
-        newOrderNumber = `${prefix}-${String(nextNumber).padStart(6, '0')}`
-      }
+      const newOrderNumber = generateOrderNumber(lastOrder.order_number)
+    
       const existingEmployee = await EmployeeModel.findByEmployeeId(employee_id)
       const employeeId = existingEmployee.id_employee
       if (!existingEmployee) {
@@ -184,12 +164,14 @@ export class OrderController {
   }
   //METODO PARA AGREGAR ITEMS A UNA ORDEN YA EXISTENTE
   static async addItemToOrder(req, res) {
-    const { dish_id, quantity } = req.body
-    const order = req.order
     try {
-      //VERIFICAR SI EL ESTADO DE LA ORDEN ESTA LISTO PARA PAGAR PARA CAMBIARLO A PENDIENTE
+      const { dish_id, quantity } = req.body
+      const order = req.order
+      //VERIFICAR SI EL ESTADO DE LA ORDEN ESTA LISTO PARA PAGAR PARA CAMBIARLO A PENDIENTE SI SE AGREGA UN NUEVO ITEM
       if (order.order_status === 'LISTO PARA PAGAR') {
         await OrderModel.updateOrderStatus(order.id_order, 'PENDIENTE')
+      } else if (order.order_status === 'LISTO PARA SERVIR'){
+        await OrderModel.updateOrderStatus(order.id_order, 'EN PROCESO')
       }
       const dish = await DishesModel.getDishById(dish_id);
       if (!dish) {
@@ -238,6 +220,8 @@ export class OrderController {
   }
   //DISMINUIR LA CANTIDAD DE UN ITEM DE LA ORDEN
   static async decreaseItemQuantity(req, res) {
+    const statusOptions = ['SERVIDO', 'LISTO PARA SERVIR', 'EN PREPARACION', 'LISTO PARA PAGAR', 'CANCELADO']
+
     try {
       const { itemId, quantity } = req.body
       const order = req.order
@@ -247,9 +231,8 @@ export class OrderController {
       if (!orderItem) {
         return res.status(404).json({ message: 'El plato no existe en la orden', status: false });
       }
-
       // VALIDAR QUE NO SE MODIFIQUEN ITEMS SERVIDOS
-      if (['SERVIDO', 'LISTO PARA SERVIR', 'EN PREPARACION', 'LISTO PARA PAGAR', 'CANCELADO'].includes(orderItem.status.toUpperCase().trim())) {
+      if (statusOptions.includes(orderItem.status.toUpperCase().trim())) {
         return res.status(400).json({ message: 'No se puede modificar el ítem porque su estado no permite cambios.', status: false });
       }
       let updatedTotal;
@@ -283,7 +266,6 @@ export class OrderController {
         }
       });
     } catch (error) {
-      console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
@@ -294,27 +276,19 @@ export class OrderController {
 
   static async removeItemFromOrder(req, res) {
     try {
-      const { orderId } = req.params
       const { itemId } = req.body
-      //VALIDAR SI LA ORDEN EXISTE
-      const order = await OrderModel.getOrderById(orderId)
-      if (!order) {
-        return res.status(404).json({ message: 'Orden no encontrada', status: false });
-      }
+      const order = req.order
       //VALIDAR SI EL ITEM DE LA ORDEN EXISTE
       const orderItem = await OrderDetailsModel.getOrderItemById(itemId)
       if (!orderItem) {
         return res.status(404).json({ message: 'El plato no existe en la orden', status: false });
       }
       const { subtotal } = orderItem;
-
       //ELIMINAR EL ITEM DE LA ORDEN
       await OrderDetailsModel.removeOrderItem(orderItem.id_item)
-
-      const updatedTotal = await OrderModel.updateTotal(orderId, subtotal);
+      const updatedTotal = await OrderModel.updateTotal(order.id_order, subtotal);
       return res.status(200).json({ message: 'Item eliminado de la orden exitosamente', newTotal: updatedTotal, order: { ...order, items: orderItem } });
     } catch (error) {
-      console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
@@ -369,11 +343,15 @@ export class OrderController {
       //ACTUALIZAR EL ESTADO DEL ITEM DE LA ORDEN
       await OrderModel.updateOrderItemStatus(orderId, itemId, status)
 
-      //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN SERVIDOS
+      //OBTENER TODOS LOS ITEMS DE LA ORDEN
       const orderItems = await OrderDetailsModel.getOrderItems(orderId)
+      //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN SERVIDOS
       const allItemsServed = orderItems.every(item => item.status.trim().toUpperCase() === 'SERVIDO')
+      //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN LISTOS PARA SERVIR
       const allItemsReadyToServer = orderItems.every(item => item.status.trim().toUpperCase() === 'LISTO PARA SERVIR')
+      //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN EN PREPARACION
       const allItemsInPreparation = orderItems.some(item => item.status.trim().toUpperCase() === 'EN PREPARACION')
+      //VERIFICAR SI ALGUN ITEM DE LA ORDEN ESTA PENDIENTE
       const anyItemPending = orderItems.some(item => item.status.trim().toUpperCase() === 'PENDIENTE');
 
       //ACTUALIZAR EL ESTADO DE LA ORDEN DE ACUERDO A LOS ITEMS DE LA ORDEN 

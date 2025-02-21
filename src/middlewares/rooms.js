@@ -3,10 +3,12 @@ import { body } from "express-validator";
 
 export const roomValidation = [
   body('room_name')
-    .notEmpty().withMessage('Name is required')
-    .isString().withMessage('Name must be a string')
-    .isLength({ min: 3 }).withMessage('Name must be at least 3 characters'),
+    .notEmpty().withMessage('El nombre de la sala es requerido')
+    .isString().withMessage('El nombre debe ser una cadena de texto')
+    .trim(),
   body('num_tables')
-    .notEmpty().withMessage('The quantity of tables is required')
-    .isNumeric().withMessage('Capacity must be a number')
+    .notEmpty().withMessage('El número de mesas es requerido')
+    .isString({ min: 1 }).withMessage('La cantidad de mesas debe ser mayor a 0')
+    .trim(),
+    
 ]

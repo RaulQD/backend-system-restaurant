@@ -17,19 +17,20 @@ export const dishValidation = [
 
 
 export const validateDishExist = async (req, res, next) => {
-  const { dish_id } = req.body;
-  const dishIdParams = req.params.dishId;
-  const dishId = dish_id || dishIdParams;
   try {
+    const { dishId } = req.params
     const dish = await DishesModel.getDishById(dishId);
     if (!dish) {
-      const error = new Error('El plato no existe');
-      return res.status(404).json({ message: error.message, status: false });
+      const error = new Error(`El plato con el id ${dishId} no existe.`)
+      return res.status(404).json({ message: error.message, status: false })
     }
-    req.dish = dish;
-    next();
+    req.dish = dish
+    next()
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: 'Error interno del plato', status: false });
+    const statusCode = error.statusCode || 500; // Si no hay statusCode, se usará 500
+    return res.status(statusCode).json({
+      message: error.message || 'Error interno del servidor',
+      status: false // Mostrar que no se pudo realizar la operación
+    });
   }
 }

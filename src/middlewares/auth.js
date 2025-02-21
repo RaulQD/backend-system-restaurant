@@ -52,7 +52,6 @@ export const validateToken = async (req, res, next) => {
 // Middleware para validar roles
 export const authorizeRole = (allowedRoles) => {
   return (req, res, next) => {
-    console.log('usuario autenticado ',req.user)
     if (!req.user || !allowedRoles.includes(req.user.role_name)) {
       return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
     }

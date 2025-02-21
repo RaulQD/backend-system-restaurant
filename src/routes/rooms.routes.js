@@ -9,21 +9,20 @@ const routes = Router()
 
 routes.get('/', RoomsController.getAllRooms)
 routes.post('/', roomValidation, handleInputErrors, RoomsController.createRoom)
-routes.get('/:id',
-  param('id')
+routes.get('/:roomId',
+  param('roomId')
     .isInt()
     .withMessage('ID de sala inválido'),
   handleInputErrors,
   RoomsController.getRoomById)
-routes.put('/:id',
-  param('id')
-    .isInt()
-    .withMessage('ID de sala inválido'),
+routes.put('/:roomId',
+  param('roomId')
+    .isInt().withMessage('ID de sala inválido'),
   roomValidation,
   handleInputErrors,
   RoomsController.updateRoom)
-routes.delete('/:id',
-  param('id')
+routes.delete('/:roomId',
+  param('roomId')
     .isInt()
     .withMessage('ID de sala inválido'),
   handleInputErrors,

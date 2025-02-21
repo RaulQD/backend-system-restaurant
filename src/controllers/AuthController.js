@@ -12,18 +12,26 @@ export class AuthController {
         const { username, password } = req.body;
         try {
             const user = await UserModel.findByUser(username);
-            await UserModel.validatePassword(password, user.password);
+
+            const isValidatePassword = await UserModel.validatePassword(password, user.password);
+            if (!isValidatePassword) {
+                const error = new Error('Usuario o contraseña incorrectos')
+                return res.status(400).json({ message: error.message, status: false })
+            }
+            if (user.status !== 'ACTIVO') {
+                const error = new Error('Usuario inactivo, contacte al administrador')
+                return res.status(400).json({ message: error.message, status: false })
+            }
 
             const token = generateJWT({
                 id: user.id
             });
-            console.log('token:', token);
             const employeeData = {
                 id: user.id,
                 username: user.username,
                 full_name: `${user.names} ${user.last_name}`,
                 role: {
-                    name: user.role_name
+                    role_name: user.role_name
                 },
                 token
             }
@@ -43,7 +51,6 @@ export class AuthController {
         const { dni, email, username, password, role_name } = req.body
 
         try {
-
             // Validaciones se pueden ejecutar en paralelo
             await UserModel.findByUsername(username)
             await EmployeeModel.findByEmail(email)

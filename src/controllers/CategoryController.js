@@ -6,7 +6,6 @@ export class CategoryController {
   static async createCategory(req, res) {
     try {
       const { category_name, category_description } = req.body
-
       // 1- CHECK IF THE CATEGORY ALREADY EXISTS
       const existingCategory = await CategoryModel.findCategoryByName(category_name)
       if (existingCategory) {
@@ -65,12 +64,7 @@ export class CategoryController {
 
   static async getCategoryById(req, res) {
     try {
-      const { id } = req.params
-      const category = await CategoryModel.getCategoryById(id)
-      if (!category) {
-        const error = new Error('Categoria no encontrada')
-        return res.status(404).json({ message: error.message, status: false })
-      }
+      const category = req.category
       return res.status(200).json(category)
     } catch (error) {
       console.log(error)
@@ -79,17 +73,11 @@ export class CategoryController {
   }
   static async updateCategory(req, res) {
     try {
-      const { id } = req.params
       const { category_name, category_description } = req.body
+      const category = req.category
 
-      //VERIFICAR SI LA CATEGORIA EXISTE
-      const existingCategory = await CategoryModel.getCategoryById(id)
-      if (!existingCategory) {
-        const error = new Error(`La categoria con el id ${id} no existe`)
-        return res.status(404).json({ message: error.message, status: false })
-      }
       //VERIFICAR SI EL NOMBRE DE LA CATEGORIA YA EXISTE EN LA BASE DE DATOS SI NO ACTUALIZAR CON EL MISMO NOMBRE
-      if (category_name !== existingCategory.category_name) {
+      if (category_name !== category.category_name) {
         const categoryExists = await CategoryModel.findCategoryByName(category_name)
         if (categoryExists) {
           const error = new Error(`La categoria ${category_name} ya existe`)
@@ -98,12 +86,10 @@ export class CategoryController {
       }
       const data = { category_name, category_description }
       //ACTUALIZAR LA CATEGORIA
-      const updateCategory = await CategoryModel.updateCategory(data, id)
+      const updateCategory = await CategoryModel.updateCategory(data, category.id)
       if (updateCategory.affectedRows === 0) {
         return res.status(500).json({ message: 'No se pudo actualizar la categoría', status: false });
       }
-
-
       return res.status(200).json({ message: 'Categoria actualizada correctamente', status: true, updateCategory })
     } catch (error) {
       console.log(error)
@@ -116,13 +102,8 @@ export class CategoryController {
   }
   static async deleteCategory(req, res) {
     try {
-      const { id } = req.params
-      const existingCategory = await CategoryModel.getCategoryById(id)
-      if (!existingCategory) {
-        const error = new Error(`La categoria con el id ${id} no existe`)
-        return res.status(404).json({ message: error.message, status: false })
-      }
-      await CategoryModel.deleteCategory(id);
+      const category = req.category
+      await CategoryModel.deleteCategory(category.id);
       return res.status(200).json({ message: 'La categoria se elimino correctamente.' })
     } catch (error) {
       console.log(error)

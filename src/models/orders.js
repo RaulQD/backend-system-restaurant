@@ -26,10 +26,12 @@ export class OrderModel {
       countParams.push(status);
     }
     if (startDate && endDate) {
+      const formattedEndDate = `${endDate} 23:59:59`;
+
       query += ` AND o.created_at BETWEEN ? AND ?`
       countQuery += ` AND o.created_at BETWEEN ? AND ?`
-      queryParams.push(startDate, endDate);
-      countParams.push(startDate, endDate);
+      queryParams.push(startDate, formattedEndDate);
+      countParams.push(startDate, formattedEndDate);
     }
     query += ` LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);

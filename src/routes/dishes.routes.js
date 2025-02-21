@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { DishesController } from "../controllers/DishesController.js";
 import { handleInputErrors } from "../middlewares/validation.js";
-import { dishValidation } from "../middlewares/dish.js";
+import { dishValidation, validateDishExist } from "../middlewares/dish.js";
 import { param } from "express-validator";
 import { upload } from "../helpers/multer.js";
 import { authorizeRole, validateToken } from "../middlewares/auth.js";
@@ -15,28 +15,25 @@ routes.get('/', validateToken, authorizeRole(['administrador','mesero']), Dishes
 routes.post('/', upload.single('image_url'), dishValidation, handleInputErrors, validateToken, authorizeRole(['administrador']), DishesController.createDish)
 routes.get('/:dishId',
   param('dishId').isInt().withMessage('El id no es válido.'),
-  handleInputErrors,
-  validateToken, 
+  validateToken,
   authorizeRole(['administrador']),
+  validateDishExist,
+  handleInputErrors,
   DishesController.getDishById)
 routes.put('/:dishId', upload.single('image'),
   param('dishId').isInt().withMessage('El id no es válido.'),
   dishValidation,
-  handleInputErrors,
   validateToken, 
   authorizeRole(['administrador']),
+  validateDishExist,
+  handleInputErrors,
   DishesController.updateDish)
 routes.patch('/:dishId/delete',
   param('dishId').isInt().withMessage('El id no es válido.'),
-  handleInputErrors,
   validateToken, 
   authorizeRole(['administrador']),
+  validateDishExist,
+  handleInputErrors,
   DishesController.deleteDish)
-routes.patch('/:dishId/restore',
-  param('dishId').isInt().withMessage('El id no es válido.'),
-  validateToken, 
-  authorizeRole(['administrador']),
-  handleInputErrors,
-  DishesController.restoredDish)
 
 export default routes;

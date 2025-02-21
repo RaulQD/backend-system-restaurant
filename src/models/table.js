@@ -22,7 +22,6 @@ export class TableModel {
     let query = `SELECT t.id_table, t.num_table, t.capacity_table, r.id_room, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE 1=1 `
     let countQuery = `SELECT COUNT(*) AS count FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE 1=1`
 
-
     const queryParams = []
     const countParams = []
 
@@ -89,6 +88,16 @@ export class TableModel {
     const [results] = await pool.query('SELECT id_table, t.num_table, t.capacity_table, t.status, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE r.room_name = ? ORDER BY t.num_table ASC;', [room_name])
 
     return results
+  }
+
+  static async getTableByRoomId(roomId){
+    try {
+        const [results] = await pool.query('SELECT id_table, num_table, capacity_table, status FROM tables WHERE room_id = ?', [roomId])
+        return results 
+    } catch (error) {
+        console.log(error)
+        throw new Error('Error al obtener las mesas por el id de la sala')
+    }
   }
   //FUNCIÓN PARA OBTENER SI LA MESA ESTÁ OCUPADA O NO
   static async getTableStatus(id) {

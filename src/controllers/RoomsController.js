@@ -16,10 +16,10 @@ export class RoomsController {
     }
   }
   static async getRoomById(req, res) {
-    const { id } = req.params
+    const { roomId } = req.params
     try {
-      const room = await RoomsModel.getRoomById(id)
-      return res.status(200).json({ status: true, data: room })
+      const room = await RoomsModel.getRoomById(roomId)
+      return res.status(200).json(room)
     } catch (error) {
       console.log(error)
       return res.status(404).json({ message: error.message, status: false })
@@ -27,11 +27,16 @@ export class RoomsController {
   }
 
   static async createRoom(req, res) {
+    const { room_name, num_tables } = req.body
     try {
-      const room = await RoomsModel.createRoom(req.body)
-      const { insertId } = room
-      const roomCreated = await RoomsModel.getRoomById(insertId)
-      return res.status(201).json({ status: true, message: 'Sala creada exitosamente', data: roomCreated })
+
+      const existingRoom = await RoomsModel.findRoomByName(room_name)
+      if (existingRoom) {
+        const error = new Error('La sala ya existe')
+        return res.status(400).json({ message: error.message, status: false })
+      }
+      await RoomsModel.createRoom({ room_name, num_tables })
+      return res.status(201).json({ message: 'Sala creada exitosamente', status: true })
     } catch (error) {
       console.log(error)
       return res.status(400).json({
@@ -42,9 +47,25 @@ export class RoomsController {
   }
 
   static async updateRoom(req, res) {
-    const { id } = req.params
+    const { roomId } = req.params
+    const { room_name, num_tables } = req.body
     try {
-      const updatedRoom = await RoomsModel.updateRoom(id, req.body); // Pasar el req.body directamente
+      const room = await RoomsModel.getRoomById(roomId)
+      if (!room) {
+        const error = new Error('La sala no existe')
+        return res.status(404).json({ message: error.message, status: false })
+      }
+      //VALIDATE IF THE ROOM NAME ALREADY EXISTS
+      if (room_name && room_name !== room.room_name) {
+        const existingRoom = await RoomsModel.findRoomByName(room_name)
+        if (existingRoom && existingRoom.id_room !== roomId) {
+          const error = new Error('El nombre de la sala ya está en uso')
+          return res.status(400).json({ message: error.message, status: false })
+        }
+      }
+      const roomData = { room_name, num_tables }
+      const updatedRoom = await RoomsModel.updateRoom(roomId, roomData)
+
       return res.status(200).json({ message: 'Sala actualizada exitosamente', status: true, data: updatedRoom })
     } catch (error) {
       console.log(error)
@@ -55,9 +76,15 @@ export class RoomsController {
     }
   }
   static async deleteRoom(req, res) {
-    const { id } = req.params
+    const { roomId } = req.params
     try {
-      await RoomsModel.deleteRoom(id)
+      const room = await RoomsModel.getRoomById(roomId)
+      if (!room) {
+        const error = new Error('La sala no existe')
+        return res.status(404).json({ message: error.message, status: false })
+      }
+
+      await RoomsModel.deleteRoom(roomId)
       return res.status(200).json({ message: 'Sala eliminada exitosamente', status: true })
     } catch (error) {
       console.log(error)

@@ -59,14 +59,13 @@ export const employeeValidation = [
 
 export const validateEmployeeExist = async (req, res, next) => {
   try {
-    const { employeeId } = req.body;
-
-    const existingEmployee = await EmployeeModel.getEmployeeById(employeeId);
-    if (!existingEmployee) {
-      const error = new Error('Empleado no encontrado.');
+    const { employeeId } = req.params;
+    const employee = await EmployeeModel.getEmployeeById(employeeId)
+    if (!employee) {
+      const error = new Error(`El empleado con el id ${employeeId} no existe.`)
       return res.status(404).json({ message: error.message, status: false })
     }
-    req.existingEmployee = existingEmployee;
+    req.employee = employee;
     next();
 
   } catch (error) {
