@@ -3,7 +3,7 @@ import { OrderController } from '../controllers/OrderController.js';
 import { authorizeRole, validateToken } from '../middlewares/auth.js';
 import { handleInputErrors } from '../middlewares/validation.js';
 import { param } from 'express-validator';
-import { orderValidation, validateOrderActiveForTable, validateOrderExist } from '../middlewares/order.js';
+import { orderValidation, validateOrderActiveForTable, validateOrderExist, validateOrderPayment, validateUpdateOrderItemsStatus } from '../middlewares/order.js';
 import { validateEmployeeExist } from '../middlewares/employee.js';
 import { validateTableExist } from '../middlewares/table.js';
 import { validateDishExist } from '../middlewares/dish.js';
@@ -82,7 +82,8 @@ routes.patch('/:orderId/item/:itemId/status',
   param('orderId').isInt().withMessage('El id de la orden no es valido.'),
   param('itemId').isInt().withMessage('El id del item no es valido.'),
   validateToken, 
-  authorizeRole(['administrador', 'cocinero','mesero']), 
+  authorizeRole(['administrador', 'cocinero','mesero']),
+  validateUpdateOrderItemsStatus,
   validateOrderExist,
   handleInputErrors,
   OrderController.updateOrderItemStatus)
@@ -104,6 +105,7 @@ routes.post('/:orderId/payment',
   param('orderId').isInt().withMessage('El id de la orden no es valido.'),
   validateToken, 
   authorizeRole(['administrador', 'mesero']), 
+  validateOrderPayment,
   validateOrderExist,
   handleInputErrors,
   OrderController.processPaymentOrder)

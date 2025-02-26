@@ -32,7 +32,7 @@ export class RoomsModel {
   }
   static async getRoomById(roomId) {
     try {
-      const [results] = await pool.query('SELECT id_room as id, room_name, num_tables FROM rooms WHERE id_room = ?', [roomId])
+      const [results] = await pool.query('SELECT id_room, room_name, num_tables FROM rooms WHERE id_room = ?', [roomId])
       return results[0]
     } catch (error) {
       console.log(error)

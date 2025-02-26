@@ -131,8 +131,8 @@ export class OrderController {
     }
   }
   static async createOrder(req, res) {
-    const { employee_id, table_id } = req.body
     try {
+      const { employee_id, table_id } = req.body
 
       //obtener el siguiente número de orden
       const lastOrder = await OrderModel.getLastNumberOrder()
@@ -175,7 +175,6 @@ export class OrderController {
       });
     }
   }
-  //METODO PARA AGREGAR ITEMS A UNA ORDEN YA EXISTENTE
   static async addItemToOrder(req, res) {
     try {
       const { dish_id, quantity } = req.body
@@ -231,7 +230,6 @@ export class OrderController {
       });
     }
   }
-  //DISMINUIR LA CANTIDAD DE UN ITEM DE LA ORDEN
   static async decreaseItemQuantity(req, res) {
     const statusOptions = ['SERVIDO', 'LISTO PARA SERVIR', 'EN PREPARACION', 'LISTO PARA PAGAR', 'CANCELADO']
 
@@ -331,10 +329,7 @@ export class OrderController {
       const { orderId, itemId } = req.params
       const { status } = req.body
       const ALLOWED_STATUS = ['PENDIENTE', 'EN PREPARACION', 'LISTO PARA SERVIR', 'SERVIDO'];
-      if (!status) {
-        const error = new Error('El estado es requerido.')
-        return res.status(400).json({ message: error.message, status: false });
-      }
+
       //VALIDAR SI EL ESTADO PROPORCIONADO ES VÁLIDO
       if (!ALLOWED_STATUS.includes(status)) {
         const error = new Error('El estado proporcionado no es válido.')
@@ -457,9 +452,7 @@ export class OrderController {
       await connection.beginTransaction()
       const { amount_received, employee_id } = req.body
       const order = req.order
-      if (!order.id_order || !amount_received || !employee_id) {
-        return res.status(400).json({ message: 'Datos incompletos para procesar el pago', status: false });
-      }
+
       //VERIFICAR SI LA ORDEN ESTA LISTA PARA PAGAR
       if (order.order_status !== 'LISTO PARA PAGAR') {
         const error = new Error('La orden no esta lista para pagar')

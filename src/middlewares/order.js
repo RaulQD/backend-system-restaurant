@@ -53,5 +53,19 @@ export const validateOrderActiveForTable = async (req, res, next) => {
 }
 
 export const validateOrderPayment = [
-    body('')
+    body('amount_received')
+        .notEmpty().withMessage('Ingresa el monto recibido')
+        .isNumeric().withMessage('El monto recibido debe ser un número')
+        .isFloat({ min: 0 }).withMessage('El monto recibido debe ser mayor a 0')
+        .trim(),
+    body('employee_id')
+        .notEmpty().withMessage('Ingresa el id del empleado')
+        .isInt().withMessage('El id del empleado debe ser un número')
+        .trim(),
+]
+export const validateUpdateOrderItemsStatus = [
+    body('status')
+        .notEmpty().withMessage('Ingresa el estado de la orden')
+        .isString().withMessage('El estado de la orden debe ser un string')
+        .trim(),
 ]

@@ -22,13 +22,8 @@ export class TableController {
     }
   }
   static async getTableById(req, res) {
-    const { tableId } = req.params
     try {
-      const table = await TableModel.getTableById(tableId)
-      if (!table) {
-        const error = new Error('Mesa no encontrada')
-        return res.status(404).json({ message: error.message, status: false })
-      }
+      const table = req.table
       const tableResponse = {
         id_table: table.id_table,
         num_table: table.num_table,
@@ -41,7 +36,6 @@ export class TableController {
       }
       return res.status(200).json(tableResponse)
     } catch (error) {
-      console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
         message: error.message, // Mostrar mensaje de error
@@ -138,21 +132,16 @@ export class TableController {
   }
   static async updateTable(req, res) {
     try {
-      const { tableId } = req.params
       const { num_table, capacity_table, room_id } = req.body
-
-      const existingTable = await TableModel.getTableById(tableId);
-      if (!existingTable) {
-        const error = new Error('Mesa no encontrada')
-        return res.status(404).json({ message: error.message, status: false })
-      }
+      const table = req.table
+     
       const room = await RoomsModel.getRoomById(room_id)
       if (!room) {
         const error = new Error('La sala no existe')
         return res.status(404).json({ message: error.message, status: false })
       }
       const data = { num_table, capacity_table, room_id }
-      const updateRows = await TableModel.updateTable(tableId, data)
+      const updateRows = await TableModel.updateTable(table.id_table, data)
       if (updateRows === 0) {
         const error = new Error('No se pudo actualizar la mesa')
         return res.status(400).json({ message: error.message, status: false })
