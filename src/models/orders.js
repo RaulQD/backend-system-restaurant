@@ -129,7 +129,7 @@ export class OrderModel {
   }
   static async getOrderActiveForTable(tableId) {
     try {
-      const [results] = await pool.query('SELECT id_order, employee_id, table_id, order_status,order_number, total FROM orders WHERE table_id = ? AND order_status IN (?,?,?,?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'LISTO PARA PAGAR'])
+      const [results] = await pool.query('SELECT o.id_order, o.employee_id , e.names AS employee_name, o.table_id, o.order_status,o.order_number, o.total FROM orders o JOIN employees e ON o.employee_id = e.id_employee WHERE o.table_id = ? AND o.order_status IN (?,?,?,?,?,?)', [tableId, 'CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'SERVIDO', 'LISTO PARA PAGAR'])
       return results[0] || null // Devuelve la orden activa o null si no hay orden activa
     } catch (error) {
       console.log(error)
@@ -139,7 +139,8 @@ export class OrderModel {
 
   static async getOrdersByStatus(order_status) {
     try {
-      const [results] = await pool.query(`SELECT o.id_order,o.order_number, o.employee_id, e.names , e.last_name , o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o  JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?)`, [order_status]);
+      //DATE(o.created_at) = CURDATE() AND
+      const [results] = await pool.query(`SELECT o.id_order,o.order_number, o.employee_id, e.names, e.last_name, o.table_id, t.num_table, o.order_status, o.total, TIMESTAMPDIFF(MINUTE, o.created_at, NOW()) AS minutes_elapsed, o.created_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?) ORDER BY FIELD(o.order_status, 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'LISTO PARA PAGAR'), o.created_at ASC;`, [order_status]);
       return results;
     } catch (error) {
       console.log(error);

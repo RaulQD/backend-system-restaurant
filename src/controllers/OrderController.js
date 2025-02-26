@@ -1,9 +1,10 @@
+import { pool } from "../config/mysql.js";
 import { DishesModel } from "../models/Dishes.js";
 import { EmployeeModel } from "../models/employees.js";
 import { OrderDetailsModel } from "../models/orderDetails.js";
 import { OrderModel } from "../models/orders.js";
 import { TableModel } from "../models/table.js";
-import { generateOrderNumber } from "../utils/orders/orderHelper.js";
+import { determinateOrderStatus, generateOrderNumber } from "../utils/orders/orderHelper.js";
 
 export class OrderController {
   static async getOrders(req, res) {
@@ -64,6 +65,7 @@ export class OrderController {
             num_table: order.num_table
           },
           total: order.total,
+          minutes_elapsed: order.minutes_elapsed,
           created_at: order.created_at
         }
       })
@@ -106,7 +108,18 @@ export class OrderController {
     try {
       const order = req.order
       const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
-      const orderData = { ...order, items: orderItems }
+      const orderData = {
+        id_order: order.id_order,
+        order_number: order.order_number,
+        order_status: order.order_status,
+        total: order.total,
+        table_id: order.table_id,
+        employee: {
+          id: order.employee_id,
+          name: order.employee_name
+        },
+        items: orderItems
+      };
       return res.status(200).json(orderData);
     } catch (error) {
       console.log(error)
@@ -124,7 +137,7 @@ export class OrderController {
       //obtener el siguiente número de orden
       const lastOrder = await OrderModel.getLastNumberOrder()
       const newOrderNumber = generateOrderNumber(lastOrder.order_number)
-    
+
       const existingEmployee = await EmployeeModel.findByEmployeeId(employee_id)
       const employeeId = existingEmployee.id_employee
       if (!existingEmployee) {
@@ -170,7 +183,7 @@ export class OrderController {
       //VERIFICAR SI EL ESTADO DE LA ORDEN ESTA LISTO PARA PAGAR PARA CAMBIARLO A PENDIENTE SI SE AGREGA UN NUEVO ITEM
       if (order.order_status === 'LISTO PARA PAGAR') {
         await OrderModel.updateOrderStatus(order.id_order, 'PENDIENTE')
-      } else if (order.order_status === 'LISTO PARA SERVIR'){
+      } else if (order.order_status === 'LISTO PARA SERVIR') {
         await OrderModel.updateOrderStatus(order.id_order, 'EN PROCESO')
       }
       const dish = await DishesModel.getDishById(dish_id);
@@ -257,7 +270,7 @@ export class OrderController {
       } else if (!hasPendingOrderItems) {
         await OrderModel.updateOrderStatus(order.id_order, 'LISTO PARA PAGAR')
       }
-      
+
       return res.status(200).json({
         message: orderItem.quantity > quantity ? 'Cantidad disminuida exitosamente.' : 'Ítem eliminado de la orden exitosamente', order: {
           id: order.id_order,
@@ -273,11 +286,10 @@ export class OrderController {
       });
     }
   }
-
   static async removeItemFromOrder(req, res) {
     try {
-      const { itemId } = req.body
       const order = req.order
+      const { itemId } = req.body
       //VALIDAR SI EL ITEM DE LA ORDEN EXISTE
       const orderItem = await OrderDetailsModel.getOrderItemById(itemId)
       if (!orderItem) {
@@ -297,16 +309,12 @@ export class OrderController {
     }
   }
   static async updateOrderStatus(req, res) {
-    const { orderId } = req.params
-    const { order_status } = req.body
     try {
-      const order = await OrderModel.getOrderById(orderId)
-      if (!order) {
-        const error = new Error('Orden no encontrada')
-        return res.status(404).json({ message: error.message, status: false });
-      }
+      const { order_status } = req.body
+      const order = req.order
+
       //ACTUALIZAR EL ESTADO DE LA ORDEN
-      await OrderModel.updateOrderStatus(orderId, order_status)
+      await OrderModel.updateOrderStatus(order.id_order, order_status)
       return res.status(200).json({ message: 'Estado de la orden actualizado exitosamente', status: true });
     } catch (error) {
       console.log(error)
@@ -318,15 +326,15 @@ export class OrderController {
     }
   }
   static async updateOrderItemStatus(req, res) {
-    const { orderId, itemId } = req.params
-    const { status } = req.body
-    const ALLOWED_STATUS = ['PENDIENTE', 'EN PREPARACION', 'LISTO PARA SERVIR', 'SERVIDO'];
 
-    if (!status) {
-      const error = new Error('El estado es requerido.')
-      return res.status(400).json({ message: error.message, status: false });
-    }
     try {
+      const { orderId, itemId } = req.params
+      const { status } = req.body
+      const ALLOWED_STATUS = ['PENDIENTE', 'EN PREPARACION', 'LISTO PARA SERVIR', 'SERVIDO'];
+      if (!status) {
+        const error = new Error('El estado es requerido.')
+        return res.status(400).json({ message: error.message, status: false });
+      }
       //VALIDAR SI EL ESTADO PROPORCIONADO ES VÁLIDO
       if (!ALLOWED_STATUS.includes(status)) {
         const error = new Error('El estado proporcionado no es válido.')
@@ -345,24 +353,9 @@ export class OrderController {
 
       //OBTENER TODOS LOS ITEMS DE LA ORDEN
       const orderItems = await OrderDetailsModel.getOrderItems(orderId)
-      //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN SERVIDOS
-      const allItemsServed = orderItems.every(item => item.status.trim().toUpperCase() === 'SERVIDO')
-      //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN LISTOS PARA SERVIR
-      const allItemsReadyToServer = orderItems.every(item => item.status.trim().toUpperCase() === 'LISTO PARA SERVIR')
-      //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN EN PREPARACION
-      const allItemsInPreparation = orderItems.some(item => item.status.trim().toUpperCase() === 'EN PREPARACION')
-      //VERIFICAR SI ALGUN ITEM DE LA ORDEN ESTA PENDIENTE
-      const anyItemPending = orderItems.some(item => item.status.trim().toUpperCase() === 'PENDIENTE');
-
-      //ACTUALIZAR EL ESTADO DE LA ORDEN DE ACUERDO A LOS ITEMS DE LA ORDEN 
-      if (allItemsServed && currentStatus !== 'LISTO PARA PAGAR') {
-        await OrderModel.updateOrderStatus(orderId, 'LISTO PARA PAGAR')
-      } else if (allItemsReadyToServer && currentStatus !== 'LISTO PARA SERVIR') {
-        await OrderModel.updateOrderStatus(orderId, 'LISTO PARA SERVIR')
-      } else if (allItemsInPreparation && currentStatus !== 'EN PROCESO') {
-        await OrderModel.updateOrderStatus(orderId, 'EN PROCESO')
-      } else if (anyItemPending && !allItemsInPreparation && !allItemsReadyToServer && !allItemsServed) {
-        await OrderModel.updateOrderStatus(orderId, 'PENDIENTE');
+      const newOrderStatus = determinateOrderStatus(orderItems, currentStatus)
+      if (newOrderStatus && newOrderStatus !== currentStatus) {
+        await OrderModel.updateOrderStatus(orderId, newOrderStatus)
       }
 
       return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true, order_id: orderAndItemExits.order_id });
@@ -377,13 +370,7 @@ export class OrderController {
   }
   static async sendOrderToKitchen(req, res) {
     try {
-      const { orderId } = req.params
-      //VALIDAR SI LA ORDEN EXISTE
-      const order = await OrderModel.getOrderById(orderId)
-      if (!order) {
-        const error = new Error('Orden no encontrada')
-        return res.status(404).json({ message: error.message, status: false });
-      }
+      const order = req.order
       //VALIDAR SI LA ORDEN YA FUE ENVIADA A LA COCINA
       if (order.order_status === 'PENDIENTE' || order.order_status === 'EN PROCESO' || order.order_status === 'LISTO PARA SERVIR' || order.order_status === 'LISTO PARA PAGAR') {
         const error = new Error('La orden ya esta en la cocina.')
@@ -392,13 +379,13 @@ export class OrderController {
         });
       }
       //VALIDAR SI LA ORDEN TIENE ITEMS.
-      const orderItems = await OrderDetailsModel.getOrderItems(orderId)
+      const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
       if (orderItems.length === 0) {
         const error = new Error('No hay items en la orden')
         return res.status(404).json({ message: error.message, status: false });
       }
       //CAMBIAR EL ESTADO DE LA ORDEN A EN PENDIENTE
-      await OrderModel.updateOrderStatus(orderId, 'PENDIENTE')
+      await OrderModel.updateOrderStatus(order.id_order, 'PENDIENTE')
       return res.status(200).json({ message: 'Orden enviada a cocina.', status: true });
     } catch (error) {
       console.log(error)
@@ -410,34 +397,29 @@ export class OrderController {
     }
   }
   static async cancelOrder(req, res) {
-    const orderStatus = ['CREADO', 'PENDIENTE']
+    const ALLOWED_STATUSES = ['CREADO', 'PENDIENTE'];
+    const MAX_CANCEL_TIME = 5; // 5 minutos
     try {
-      const { orderId } = req.params
+      const order = req.order
 
-      const order = await OrderModel.getOrderById(orderId)
-      if (!order) {
-        const error = new Error('Orden no encontrada.')
-        return res.status(404).json({ message: error.message, status: false });
-      }
-
-      if (!orderStatus.includes(order.order_status)) {
+      if (!ALLOWED_STATUSES.includes(order.order_status)) {
         const error = new Error('No puedes cancelar esta orden. Estado actual no permite cambios.')
         return res.status(400).json({ message: error.message, status: false });
       }
       //VERIFICAR SI LA ORDEN TIENE MÁS DE 10 MINUTOS CREADO, PARA NO PODER CANCELAR
       const orderDate = new Date(order.created_at).getTime();
       const currentDate = Date.now()
-      const minutosElapsed = (currentDate - orderDate) / 60000;
-      if (minutosElapsed > 1 && order.order_status === 'PENDIENTE') {
-        const error = new Error('No puedes cancelar esta orden. Han pasado más de 10 minutos desde que se creó.')
+      const minutosElapsed = Math.floor(currentDate - orderDate) / 60000;
+      if (minutosElapsed > MAX_CANCEL_TIME && order.order_status === 'PENDIENTE') {
+        const error = new Error('No puedes cancelar esta orden. Han pasado más de 5 minutos desde que se creó.')
         return res.status(400).json({ message: error.message, status: false });
       }
 
       //USAR PROMISE.ALL PARA EJECUTAR VARIAS CONSULTAS ASÍNCRONAS DE FORMA SIMULTÁNEA
       await Promise.all([
-        OrderDetailsModel.cancelOrderItems(orderId, 'CANCELADO'),
+        OrderDetailsModel.cancelOrderItems(order.id_order, 'CANCELADO'),
         //CAMBIAR EL ESTADO DE LA ORDEN A CANCELADO
-        OrderModel.updateOrderStatus(orderId, 'CANCELADO'),
+        OrderModel.updateOrderStatus(order.id_order, 'CANCELADO'),
         //CAMBIAR EL ESTADO DE LA MESA A DISPONIBLE
         TableModel.updateTableStatus(order.table_id, 'DISPONIBLE')
       ])
@@ -445,27 +427,21 @@ export class OrderController {
       return res.status(200).json({ message: 'Orden cancelada exitosamente.', status: true });
     } catch (error) {
       console.log(error)
-      const statusCode = error.statusCode || 500
-      return res.status(statusCode).json({
-        message: error.message, // Mostrar mensaje de error
+      return res.status(error.statusCode || 500).json({
+        message: error.message || 'Ocurrió un error inesperado.',
         status: false
       });
     }
   }
   static async getOrderSummary(req, res) {
-    const { orderId } = req.params
     try {
-      const order = await OrderModel.getOrderById(orderId)
-      if (!order) {
-        const error = new Error('Orden no encontrada')
-        return res.status(404).json({ message: error.message, status: false });
-      }
-      const orderItems = await OrderModel.getOrderSummary(orderId)
+      const order = req.order
+
+      const orderItems = await OrderModel.getOrderSummary(order.id_order)
       if (orderItems.length === 0) {
         return [];
       }
-
-      return res.status(200).json({ orderId, orderItems });
+      return res.status(200).json({ orderId: order.id_order, orderItems });
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
@@ -476,25 +452,19 @@ export class OrderController {
     }
   }
   static async processPaymentOrder(req, res) {
-    const { orderId } = req.params
-    const { amount_received, employee_id } = req.body
+    const connection = await pool.getConnection()
     try {
-      if (!orderId || !amount_received || !employee_id) {
+      await connection.beginTransaction()
+      const { amount_received, employee_id } = req.body
+      const order = req.order
+      if (!order.id_order || !amount_received || !employee_id) {
         return res.status(400).json({ message: 'Datos incompletos para procesar el pago', status: false });
-      }
-
-      const order = await OrderModel.getOrderById(orderId)
-      console.log(order);
-      if (!order) {
-        const error = new Error('Orden no encontrada')
-        return res.status(404).json({ message: error.message, status: false });
       }
       //VERIFICAR SI LA ORDEN ESTA LISTA PARA PAGAR
       if (order.order_status !== 'LISTO PARA PAGAR') {
         const error = new Error('La orden no esta lista para pagar')
         return res.status(400).json({ message: error.message, status: false });
       }
-
       //VALIDAR EL MONTO RECIBIDO
       if (amount_received < order.total) {
         const error = new Error('El monto recibido es menor al total de la orden')
@@ -509,22 +479,23 @@ export class OrderController {
         return res.status(404).json({ message: 'Empleado no encontrado', status: false });
       }
       const fullname = `${employee.names} ${employee.last_name}`
-
       //REGISTRAR EL PAGO DE LA ORDEN
-      await OrderModel.insertPayments({ orderId, employee_id, total_paid, amount_received, change_amount })
+      await OrderModel.insertPayments({ orderId: order.id_order, employee_id, total_paid, amount_received, change_amount })
 
       //CAMBIAR EL ESTADO DE LOS ITEMS DE LA ORDEN A COMPLETADO
-      const updateOrderItems = order.items.map(item => OrderModel.updateOrderItemStatus(orderId, item.id_item, 'PAGADO'))
+      const updateOrderItems = order.items.map(item => OrderModel.updateOrderItemStatus(order.id_order, item.id_item, 'PAGADO'))
       await Promise.all(updateOrderItems)
       //CAMBIAR EL ESTADO DE LA ORDEN A PAGADO
-      await OrderModel.updateOrderStatus(orderId, 'PAGADO')
+      await OrderModel.updateOrderStatus(order.id_order, 'PAGADO')
       //ACTUALIZAR EL ESTADO DE LA MESA A DISPONIBLE
       await TableModel.updateTableStatus(order.table_id, 'DISPONIBLE')
+      //COMMIT DE LA TRANSACCIÓN
+      await connection.commit()
       return res.status(200).json({
         message: 'Orden pagada exitosamente',
         status: true,
         payment: {
-          order_id: orderId,
+          order_id: order.id_order,
           total_paid: order.total,
           amount_received,
           change_amount,
@@ -532,12 +503,14 @@ export class OrderController {
         }
       });
     } catch (error) {
-      console.log(error)
+      await connection.rollback();
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
         message: error.message,
         status: false
       });
+    } finally {
+      connection.release();
     }
   }
 

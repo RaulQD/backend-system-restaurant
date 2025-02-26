@@ -52,6 +52,6 @@ export const validateOrderActiveForTable = async (req, res, next) => {
     }
 }
 
-export const checkAndUpdateOrderStatus = async (req, res, next) => {
-
-}
+export const validateOrderPayment = [
+    body('')
+]

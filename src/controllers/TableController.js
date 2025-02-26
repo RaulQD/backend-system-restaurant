@@ -51,8 +51,8 @@ export class TableController {
   }
 
   static async getTablesByRoomName(req, res) {
-    const { room } = req.query
     try {
+      const { room } = req.query
       const tables = await TableModel.getTablesByRoomName(room)
       if (tables.length === 0) {
         const error = new Error('No se encontraron mesas en la sala')
@@ -64,6 +64,11 @@ export class TableController {
           num_table: table.num_table,
           capacity_table: table.capacity_table,
           status: table.status,
+          room: table.room_name,
+          id_employee: table.id_employee,
+          employee_name: table.employee_name,
+          employee_last_name:table.employee_last_name,
+          total_amount : table.total_amount
         }
       })
 
@@ -72,7 +77,7 @@ export class TableController {
       console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
-        message: error.message, // Mostrar mensaje de error
+        message: error.message, 
         status: false
       });
     }

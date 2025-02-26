@@ -85,7 +85,7 @@ export class TableModel {
   }
 
   static async getTablesByRoomName(room_name) {
-    const [results] = await pool.query('SELECT id_table, t.num_table, t.capacity_table, t.status, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE r.room_name = ? ORDER BY t.num_table ASC;', [room_name])
+    const [results] = await pool.query(`SELECT t.id_table, t.num_table, t.capacity_table, t.status, r.room_name,e.id_employee, e.names as employee_name, e.last_name as employee_last_name, o.total as total_amount FROM tables t JOIN rooms r ON t.room_id = r.id_room LEFT JOIN orders o ON t.id_table = o.table_id AND o.order_status IN ('CREADO', 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'LISTO PARA PAGAR') LEFT JOIN employees e ON o.employee_id = e.id_employee WHERE r.room_name = ? ORDER BY t.num_table ASC`, [room_name])
 
     return results
   }
