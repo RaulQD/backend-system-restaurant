@@ -17,7 +17,7 @@ export const tableValidation = [
 
 export const validateTableExist = async (req, res, next) => {
   try {
-    const { tableId } = req.body
+    const { tableId } = req.params
     const table = await TableModel.getTableById(tableId)
     if (!table) {
       const error = new Error('La mesa no existe.')
@@ -25,7 +25,6 @@ export const validateTableExist = async (req, res, next) => {
     }
     req.table = table
     next()
-
   } catch (error) {
     return res.status(500).json({ error: 'Error interno del servidor', status: false })
   }

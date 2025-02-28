@@ -94,19 +94,39 @@ export class OrderModel {
     }
 
   }
-
   static async getOrderById(id) {
-    const [results] = await pool.query(`SELECT o.id_order, o.employee_id, CONCAT(e.names ,' ', e.last_name) AS names, o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE o.id_order = ?`, [id])
-    const order = results[0]
+    try {
+      const [results] = await pool.query(`SELECT o.id_order, o.employee_id, CONCAT(e.names ,' ', e.last_name) AS names, o.table_id, t.num_table , o.order_status, o.total, o.created_at  FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE o.id_order = ?`, [id])
+      const order = results[0]
 
-    if (!order) {
-      return null;
+      if (!order) {
+        return null;
+      }
+      // OBTENER LOS ITEMS DE LA ORDEN CON SU ESTADO
+      const [itemsRow] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish, d.dishes_name, od.unit_price, od.subtotal, od.status FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [id])
+      order.items = itemsRow
+
+      return order;
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al obtener  la orden con su detalle')
     }
-    // OBTENER LOS ITEMS DE LA ORDEN CON SU ESTADO
-    const [itemsRow] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish, d.dishes_name, od.unit_price, od.subtotal, od.status FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [id])
-    order.items = itemsRow
+  }
+  static async getOrderDetailsHistoryById(ordeId) {
+    try {
+      const [result] = await pool.query('SELECT o.id_order, o.order_status,o.order_number, o.total, o.created_at, e.id_employee, e.names, e.last_name, t.id_table, t.num_table FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE o.id_order = ?', [ordeId]);
+      const order = result[0];
+      if (!order) {
+        return null;
+      }
+      const [itemsRow] = await pool.query('SELECT od.id_item, od.quantity, d.id_dish, d.dishes_name, od.unit_price, od.subtotal, od.status FROM order_details od JOIN dishes d ON od.dish_id = d.id_dish WHERE od.order_id = ?', [ordeId])
+      order.items = itemsRow
+      return order;
 
-    return order;
+    } catch (error) {
+      console.log(error)
+      throw new Error('Error al obtener  la orden con su detalle')
+    }
   }
   static async getLastNumberOrder() {
     try {
@@ -117,6 +137,7 @@ export class OrderModel {
       throw new Error('Error al obtener el último número de orden')
     }
   }
+
   static async createOrder(orderData) {
     const { employee_id, table_id, order_number } = orderData
     try {

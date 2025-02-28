@@ -79,7 +79,6 @@ export class OrderController {
       });
     }
   }
-
   static async getOrderById(req, res) {
     try {
       const order = req.order
@@ -92,7 +91,6 @@ export class OrderController {
       } else {
         req.order.items = orderItems; // Asignar los ítems si existen
       }
-
       return res.status(200).json(order);
     } catch (error) {
       console.log(error)
@@ -103,7 +101,56 @@ export class OrderController {
       });
     }
   }
+  static async getOrderDetailsHistoryById(req, res) {
+    try {
+      const { orderId } = req.params
+      const order = await OrderModel.getOrderDetailsHistoryById(orderId)
+      if (!order) {
+        const error = new Error('Orden no encontrada')
+        return res.status(404).json({ message: error.message, status: false });
+      }
 
+      const orderItems = await OrderDetailsModel.getOrderItems(order.id_order)
+      if (!orderItems || orderItems.length === 0) {
+        order.items = [];
+        order.message = "Esta orden no tiene ningún ítem adjuntado."; // Mensaje informativo
+      } else {
+        order.items = orderItems;
+      }
+      const orderData = {
+        id_order: order.id_order,
+        created_at: order.created_at,
+        total: order.total,
+        order_number: order.order_number,
+        order_status: order.order_status,
+        employee: {
+          id_employee: order.id_employee,
+          names: order.names,
+          last_name: order.last_name
+        },
+        table: {
+          id_table: order.id_table,
+          num_table: order.num_table
+        },
+        items: order.items.length > 0 ? order.items.map(item => ({
+          id_item: item.id_item,
+          dishes_name: item.dishes_name,
+          unit_price: item.unit_price,
+          quantity: item.quantity,
+          subtotal: item.subtotal,
+          status: item.status
+        })) : []
+      };
+      return res.status(200).json(orderData);
+    } catch (error) {
+      console.log(error)
+      const statusCode = error.statusCode || 500
+      return res.status(statusCode).json({
+        message: error.message, // Mostrar mensaje de error
+        status: false
+      });
+    }
+  }
   static async getOrderByTableId(req, res) {
     try {
       const order = req.order
