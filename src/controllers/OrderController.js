@@ -183,7 +183,8 @@ export class OrderController {
 
       //obtener el siguiente número de orden
       const lastOrder = await OrderModel.getLastNumberOrder()
-      const newOrderNumber = generateOrderNumber(lastOrder.order_number)
+      const lastOrderNumber = lastOrder ? lastOrder.order_number : null;
+      const newOrderNumber = generateOrderNumber(lastOrderNumber);
 
       const existingEmployee = await EmployeeModel.findByEmployeeId(employee_id)
       const employeeId = existingEmployee.id_employee
