@@ -111,10 +111,8 @@ export class TableModel {
     try {
       // 3- INSERT THE NEW TABLE
       const [result] = await pool.query(`INSERT INTO tables ( num_table, capacity_table, room_id) VALUES (?,?,?)`, [num_table, capacity_table, roomId])
-      console.log("Resultado de inserción:", result); // 👀 Verifica que insertId esté presente
       return result;
     } catch (error) {
-      console.log(error)
       throw new Error('Error al crear la mesa')
     }
   }
@@ -123,7 +121,6 @@ export class TableModel {
     try {
       await pool.query('UPDATE tables SET num_table = ?, capacity_table = ?, room_id = ? WHERE id_table = ?', [num_table, capacity_table, room_id, tableId])
     } catch (error) {
-      console.log(error)
       throw new Error('Error al actualizar la mesa')
     }
   }
@@ -132,7 +129,6 @@ export class TableModel {
     try {
       await pool.query('UPDATE tables SET status = ? WHERE id_table = ?', [status, id])
     } catch (error) {
-      console.log(error)
       throw new Error('Error al actualizar el estado de la mesa')
     }
 

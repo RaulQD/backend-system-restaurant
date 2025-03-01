@@ -5,7 +5,19 @@ export class RoomsController {
   static async getAllRooms(req, res) {
     try {
       const rooms = await RoomsModel.getRooms()
-      return res.status(200).json(rooms)
+      if (rooms.length === 0) {
+        const error = new Error('No se encontraron salas')
+        return res.status(404).json({ message: error.message, status: false })
+      }
+
+      const roomsData = rooms.map(room => {
+        return {
+          id: room.id,
+          room_name: room.room_name,
+          num_tables: room.num_tables
+        }
+      })
+      return res.status(200).json(roomsData)
     } catch (error) {
       console.log(error)
       const statusCode = error.statusCode || 500
