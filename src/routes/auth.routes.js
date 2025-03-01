@@ -9,7 +9,7 @@ import { upload } from "../helpers/multer.js";
 const routes = Router();
 
 routes.get('/profile', validateToken, AuthController.getProfile);
-routes.post('/account', upload.single('image'), validateToken, authorizeRole(['administrador']), userValidation, handleInputErrors, AuthController.createAccount)
+routes.post('/account', upload.single('image'), validateToken, userValidation, handleInputErrors, AuthController.createAccount)
 routes.post('/login', loginValidation, AuthController.login)
 
 export default routes;
