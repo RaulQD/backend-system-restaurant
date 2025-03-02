@@ -32,7 +32,12 @@ export class EmployeeModel {
   }
   static async findByEmployeeId(employee_id) {
     try {
+      console.log("Ejecutando consulta para empleado con ID:", employee_id);
       const [employeeResult] = await pool.query(`SELECT id_employee , names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = ?`, [employee_id])
+      if (employeeResult.length === 0) {
+        return null;
+      }
+      console.log("Resultado de la consulta:", employeeResult);
       const employee = employeeResult[0];
       return employee;
     } catch (error) {
