@@ -524,7 +524,8 @@ export class OrderController {
       await connection.beginTransaction()
       const { amount_received, employee_id } = req.body
       const order = req.order
-
+      console.log("req.body en producción:", req.body);
+      console.log("Employee ID recibido:", req.body.employee_id);
       //VERIFICAR SI LA ORDEN ESTA LISTA PARA PAGAR
       if (order.order_status !== 'LISTO PARA PAGAR') {
         const error = new Error('La orden no esta lista para pagar')
@@ -540,6 +541,7 @@ export class OrderController {
       const change_amount = (amount_received - total_paid).toFixed(2)
       //OBTENER EL NOMBRE DEL EMPLEADO
       const employee = await EmployeeModel.findByEmployeeId(employee_id)
+      console.log(employee.id_employee);
       if (!employee) {
         return res.status(404).json({ message: 'Empleado no encontrado', status: false });
       }

@@ -3,27 +3,42 @@ import { pool } from "../config/mysql.js";
 
 export class EmployeeModel {
   static async findByEmail(email) {
-    const [existingEmail] = await pool.query('SELECT id_employee, email FROM employees WHERE email = ?', [email]);
-    if (existingEmail.length > 0) {
-      const error = new Error('El email ya existe')
-      error.statusCode = 400;
-      throw error;
+    try {
+      const [existingEmail] = await pool.query('SELECT id_employee, email FROM employees WHERE email = ?', [email]);
+      if (existingEmail.length > 0) {
+        const error = new Error('El email ya existe')
+        error.statusCode = 400;
+        throw error;
+      }
+      return existingEmail;
+    } catch (error) {
+      console.error('Error al buscar el email:', error); // Más detalles en consola
+      throw new Error('Error al buscar el email')
     }
-    return existingEmail;
   }
   static async findByDni(dni) {
-    const [existingDni] = await pool.query('SELECT * FROM employees WHERE dni = ?', [dni]);
-    if (existingDni.length > 0) {
-      const error = new Error('El DNI ya existe')
-      error.statusCode = 400;
-      throw error;
+    try {
+      const [existingDni] = await pool.query('SELECT * FROM employees WHERE dni = ?', [dni]);
+      if (existingDni.length > 0) {
+        const error = new Error('El DNI ya existe')
+        error.statusCode = 400;
+        throw error;
+      }
+      return existingDni;
+    } catch (error) {
+      console.error('Error al buscar el DNI:', error); // Más detalles en consola
+      throw new Error('Error al buscar el DNI')
     }
-    return existingDni;
   }
-  static async findByEmployeeId(id) {
-    const [employeeResult] = await pool.query(`SELECT id_employee , names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = ?`, [id])
-    const employee = employeeResult[0];
-    return employee;
+  static async findByEmployeeId(employee_id) {
+    try {
+      const [employeeResult] = await pool.query(`SELECT id_employee , names, last_name, status, salary, DATE_FORMAT(hire_date, '%Y-%m-%d') as hire_date FROM employees WHERE id_employee = ?`, [employee_id])
+      const employee = employeeResult[0];
+      return employee;
+    } catch (error) {
+      console.error('Error al obtener el empleado:', error); // Más detalles en consola
+      throw new Error('Error al obtener el empleado')
+    }
   }
   static async getEmployees(keyword, status, page = 1, limit = 10) {
 
@@ -111,12 +126,17 @@ export class EmployeeModel {
   }
   static async getEmployeeById(id) {
 
-    const [employeeResult] = await pool.query(`SELECT e.id_employee as id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, e.profile_picture_url, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name, u.username, u.password, u.id_user as user_id FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = ?`, [id])
+    try {
+      const [employeeResult] = await pool.query(`SELECT e.id_employee as id, e.names, e.last_name, e.dni, e.email, e.phone, e.address, e.salary, e.profile_picture_url, DATE_FORMAT(e.hire_date, '%Y-%m-%d') as hire_date, e.status, r.role_name, u.username, u.password, u.id_user as user_id FROM employees e JOIN users u ON e.user_id = u.id_user JOIN user_roles ur ON u.id_user = ur.user_id JOIN roles r ON ur.role_id = r.id_rol WHERE e.id_employee = ?`, [id])
 
-    const employee = employeeResult[0];
-    //GET JSON ARRAY OF THE RESULTS
-    return employee
+      const employee = employeeResult[0];
+      //GET JSON ARRAY OF THE RESULTS
+      return employee
 
+    } catch (error) {
+      console.error('Error al obtener el empleado:', error); // Más detalles en consola
+      throw new Error('Error al obtener el empleado')
+    }
   }
   static async createEmployee(data, userId) {
     const { names, last_name, dni, email, phone, address, profile_picture_url, hire_date, salary } = data
