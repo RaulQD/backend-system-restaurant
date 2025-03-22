@@ -322,7 +322,7 @@ export class OrderController {
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
       const updatedTotal = await OrderModel.updateTotal(order.id_order, totalAmount);
 
-      io.to('cocina').emit('update-list-kitchen', { message: 'Se ha actualizado la lista de pedidos en cocina.' })
+      io.to('cocina').emit('update-list-kitchen', { message :  `Se agregaron nuevos platos a la orden ${order.order_number}`})
 
       return res.status(201).json({
         message: 'Plato agregado exitosamente.',
