@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 const PORT = process.env.PORT
 const io = new WebSocketServer(server, {
   cors: {
-    origin: 'http://localhost:5173', // frontend url
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // frontend url
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   }
 })
