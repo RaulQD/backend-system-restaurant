@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'node:http';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import cors from 'cors';
@@ -16,21 +17,22 @@ import ordersRoutes from './routes/order.routes.js';
 
 dotenv.config();
 connectMysql();
-const server = express()
-
-server.use(express.json())
-server.use(express.urlencoded({ extended: true }))
-server.use(morgan('dev'))
-server.use(cors(corsConfig))
-
-server.use('/api/v1/auth', authRoutes);
-server.use('/api/v1/rol', rolRoutes)
-server.use('/api/v1/dishes', dishesRoutes);
-server.use('/api/v1/category', categoryRoutes);
-server.use('/api/v1/rooms', roomsRoutes);
-server.use('/api/v1/tables', tablesRoutes);
-server.use('/api/v1/employees', employeesRoutes);
-server.use('/api/v1/orders', ordersRoutes);
+const app = express()
+const server = createServer(app)
 
 
-export default server;
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(morgan('dev'))
+app.use(cors(corsConfig))
+
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/rol', rolRoutes)
+app.use('/api/v1/dishes', dishesRoutes);
+app.use('/api/v1/category', categoryRoutes);
+app.use('/api/v1/rooms', roomsRoutes);
+app.use('/api/v1/tables', tablesRoutes);
+app.use('/api/v1/employees', employeesRoutes);
+app.use('/api/v1/orders', ordersRoutes);
+
+export { server, app }

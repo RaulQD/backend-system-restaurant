@@ -40,6 +40,11 @@ routes.get('/kitchen',
   validateToken,
   authorizeRole(['administrador', 'cocinero']),
   OrderController.getOrdersForKitchen)
+routes.get('/ready-for-serving',
+  validateToken,
+  authorizeRole(['administrador', 'mesero']),
+  OrderController.getOrdersReady
+)
 routes.get('/active/:tableId',
   param('tableId').isInt().withMessage('El id de la mesa no es valido.'),
   validateOrderActiveForTable,
@@ -58,7 +63,7 @@ routes.get('/:orderId',
   param('orderId').isInt().withMessage('El id de la orden no es valido.'),
   validateOrderExist,
   validateToken,
-  authorizeRole(['administrador', 'cocinero']),
+  authorizeRole(['administrador', 'cocinero','mesero']),
   handleInputErrors,
   OrderController.getOrderById)
 routes.get('/:orderId/details',

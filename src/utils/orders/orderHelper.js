@@ -26,25 +26,25 @@ export const generateOrderNumber = (lastOrderNumber) => {
 }
 
 export const determinateOrderStatus = (orderItems, currentStatus) => {
-  //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN SERVIDOS
-  const allItemsServed = orderItems.every(item => item.status.trim().toUpperCase() === 'SERVIDO')
-  //VERIFICAR SI TODOS LOS ITEMS DE LA ORDEN ESTAN LISTOS PARA SERVIR
-  const allItemsReadyToServer = orderItems.every(item => item.status.trim().toUpperCase() === 'LISTO PARA SERVIR' || item.status.trim().toUpperCase() === 'SERVIDO')
-  //VERIFICAR SI ALGUN ITEM DE LA ORDEN ESTAN EN PREPARACION
-  const allItemsInPreparation = orderItems.some(item => item.status.trim().toUpperCase() === 'EN PREPARACION')
-  //VERIFICAR SI ALGUN ITEM DE LA ORDEN ESTA PENDIENTE
-  const anyItemPending = orderItems.some(item => item.status.trim().toUpperCase() === 'PENDIENTE');
 
-  //ACTUALIZAR EL ESTADO DE LA ORDEN DE ACUERDO A LOS ITEMS DE LA ORDEN 
-  if (allItemsServed && currentStatus !== 'LISTO PARA PAGAR') {
-    return 'LISTO PARA PAGAR';
-  } else if (allItemsReadyToServer && currentStatus !== 'LISTO PARA SERVIR') {
-    return 'LISTO PARA SERVIR'
-  } else if (allItemsInPreparation && currentStatus !== 'EN PROCESO') {
+  //VERIFICAR SI ALGUN ITEM DE LA ORDEN ESTA EN ESTADO "EN PREPARACIÓN"
+  const someItemsInPreparation = orderItems.some(item => item.status.trim().toUpperCase() === 'EN PREPARACION')
+  if(someItemsInPreparation && currentStatus !== 'EN PROCESO'){
     return 'EN PROCESO'
-  } else if (anyItemPending && !allItemsInPreparation && !allItemsReadyToServer && !allItemsServed) {
+  }
+  const allItemsReadyToServer = orderItems.every(item => item.status.trim().toUpperCase() === 'LISTO PARA SERVIR')
+  if(allItemsReadyToServer && currentStatus !== 'LISTO PARA SERVIR'){
+    return 'LISTO PARA SERVIR'
+  }
+  const allItemsServed =  orderItems.every(item => item.status.trim().toUpperCase() === 'SERVIDO')
+  if(allItemsServed && currentStatus !== 'SERVIDO'){
+    return 'LISTO PARA PAGAR'
+  }
+  const anyItemPending = orderItems.some(item => item.status.trim().toUpperCase() === 'PENDIENTE')
+  if(anyItemPending){
     return 'PENDIENTE'
   }
+  
   return currentStatus; //MANTENGO EL ESTADO ACTUAL SI NO SE CUMPLE NINGUNA CONDICION
 
 

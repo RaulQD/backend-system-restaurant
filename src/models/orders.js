@@ -158,10 +158,13 @@ export class OrderModel {
     }
   }
 
-  static async getOrdersByStatus(order_status) {
+  static async getOrdersByStatus(order_status, orderBy='created_at') {
     try {
       //DATE(o.created_at) = CURDATE() AND
-      const [results] = await pool.query(`SELECT o.id_order,o.order_number, o.employee_id, e.names, e.last_name, o.table_id, t.num_table, o.order_status, o.total, TIMESTAMPDIFF(MINUTE, o.created_at, NOW()) AS minutes_elapsed, o.created_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE DATE(o.created_at) = CURDATE() AND order_status IN (?) ORDER BY FIELD(o.order_status, 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR', 'LISTO PARA PAGAR'), o.created_at ASC;`, [order_status]);
+      const [results] = await pool.query(`SELECT o.id_order,o.order_number, o.employee_id, e.names, e.last_name, o.table_id, t.num_table, o.order_status, o.total, TIMESTAMPDIFF(MINUTE, o.created_at, NOW()) AS minutes_elapsed, o.created_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?) ORDER BY FIELD(o.order_status, 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR'), o.${orderBy} ASC;`, [order_status]);
+      if(results.length === 0){
+        return [];
+      }
       return results;
     } catch (error) {
       console.log(error);
@@ -171,7 +174,7 @@ export class OrderModel {
 
   static async getOrderIdAndItemId(orderId, itemId) {
     try {
-      const [results] = await pool.query('SELECT od.order_id, od.status, o.order_status FROM order_details od INNER JOIN orders o ON od.order_id = o.id_order WHERE od.id_item = ? AND o.id_order = ?', [itemId, orderId]);
+      const [results] = await pool.query('SELECT od.order_id, od.status, o.order_status, o.employee_id, t.num_table FROM order_details od INNER JOIN orders o ON od.order_id = o.id_order JOIN tables t ON o.table_id = t.id_table WHERE od.id_item = ? AND o.id_order = ?', [itemId, orderId])
       return results[0];
     } catch (error) {
       console.log(error);

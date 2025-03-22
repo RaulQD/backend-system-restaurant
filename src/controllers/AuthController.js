@@ -24,7 +24,8 @@ export class AuthController {
             }
 
             const token = generateJWT({
-                id: user.id
+                id: user.id,
+                role_name: user.role_name,
             });
             const employeeData = {
                 id: user.id,
