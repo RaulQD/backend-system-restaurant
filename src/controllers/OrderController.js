@@ -79,10 +79,7 @@ export class OrderController {
   static async getOrdersReady(req, res) {
     try {
       const ordersReady = await OrderModel.getOrdersByStatus(['LISTO PARA SERVIR'], 'updated_at')
-      if (!ordersReady.length) {
-        const error = new Error('No hay ordenes listas para servir.')
-        return res.status(404).json({ message: error.message, status: false });
-      }
+
       const ordersData = ordersReady.map(order => {
         return {
           id_order: order.id_order,
@@ -285,7 +282,7 @@ export class OrderController {
     try {
       const { dish_id, quantity } = req.body
       const order = req.order
-      //VERIFICAR SI EL ESTADO DE LA ORDEN ESTA LISTO PARA PAGAR PARA CAMBIARLO A PENDIENTE SI SE AGREGA UN NUEVO ITEM
+      //VALIDA SI LA ORDEN ESTA EN 
       if (order.order_status === 'LISTO PARA PAGAR') {
         await OrderModel.updateOrderStatus(order.id_order, 'PENDIENTE')
       } else if (order.order_status === 'LISTO PARA SERVIR') {
@@ -321,8 +318,10 @@ export class OrderController {
       const orderItems = await OrderDetailsModel.getOrderItems(order.id_order);
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
       const updatedTotal = await OrderModel.updateTotal(order.id_order, totalAmount);
-
-      io.to('cocina').emit('update-list-kitchen', { message :  `Se agregaron nuevos platos a la orden ${order.order_number}`})
+      // if(['EN PROCESO', 'LISTO PARA SERVIR', 'LISTO PARA PAGAR'].includes(order.order_status.toUpperCase())){
+      //   io.to('cocina').emit('add-item-order', { message: `Se ha agregado un nuevo plato a la orden ${order.order_number}`, order_id: order.id_order })
+      // }
+      // io.to('cocina').emit('update-list-kitchen', { message :  `Se agregaron nuevos platos a la orden ${order.order_number}`})
 
       return res.status(201).json({
         message: 'Plato agregado exitosamente.',
@@ -378,7 +377,7 @@ export class OrderController {
         await OrderModel.updateOrderStatus(order.id_order, 'LISTO PARA PAGAR')
       }
 
-      io.to('cocina').emit('update-list-kitchen', { message: 'Se ha actualizado la lista de pedidos en cocina.' })
+      // io.to('cocina').emit('update-list-kitchen', { message: 'Se ha actualizado la lista de pedidos en cocina.' })
 
       return res.status(200).json({
         message: orderItem.quantity > quantity ? 'Cantidad disminuida exitosamente.' : 'Ítem eliminado de la orden exitosamente', order: {

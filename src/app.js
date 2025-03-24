@@ -61,12 +61,7 @@ io.on('connection', (socket) => {
     io.to(`mesero_${orderItemData.waiter_id}`).emit('update-order-item-status', orderItemData);
     io.to('cocina').emit('update-list-kitchen', orderItemData)
   });
-
-  socket.on('update-order', (orderItemData) => {
-    console.log('🍽️ Agregando un plato adicional', orderItemData)
-    io.to('cocina').emit('add-item-order',orderItemData)
-  })
-
+  
   socket.on('disconnect', () => {
     console.log(`❌ Usuario desconectado (Socket ID: ${user.id})`);
   })
