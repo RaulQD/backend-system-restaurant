@@ -48,6 +48,15 @@ io.on('connection', (socket) => {
     console.log(`👨‍🍳 Usuario mesero_${user.id} agregado a la sala`);
     socket.join(`mesero_${user.id}`);
   }
+  socket.on('join-orders-ready', () => {
+    console.log(`👨‍🍳 Usuario mesero_${user.id} agregado a la sala de ordenes listas`);
+    socket.join('orders-ready')
+  })
+  socket.on('leave-orders-ready', () => {
+    console.log(`👨‍🍳 Usuario mesero_${user.id} eliminado de la sala de ordenes listas`);
+    socket.leave('orders-ready')
+  })
+
   //EMITIR LA ORDEN AL MESERO
   socket.on('send-order-to-kitchen', (orderData) => {
     console.log('🍽️ Nueva orden:', orderData);
@@ -61,7 +70,7 @@ io.on('connection', (socket) => {
     io.to(`mesero_${orderItemData.waiter_id}`).emit('update-order-item-status', orderItemData);
     io.to('cocina').emit('update-list-kitchen', orderItemData)
   });
-  
+
   socket.on('disconnect', () => {
     console.log(`❌ Usuario desconectado (Socket ID: ${user.id})`);
   })

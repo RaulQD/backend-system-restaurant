@@ -318,10 +318,6 @@ export class OrderController {
       const orderItems = await OrderDetailsModel.getOrderItems(order.id_order);
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
       const updatedTotal = await OrderModel.updateTotal(order.id_order, totalAmount);
-      // if(['EN PROCESO', 'LISTO PARA SERVIR', 'LISTO PARA PAGAR'].includes(order.order_status.toUpperCase())){
-      //   io.to('cocina').emit('add-item-order', { message: `Se ha agregado un nuevo plato a la orden ${order.order_number}`, order_id: order.id_order })
-      // }
-      // io.to('cocina').emit('update-list-kitchen', { message :  `Se agregaron nuevos platos a la orden ${order.order_number}`})
 
       return res.status(201).json({
         message: 'Plato agregado exitosamente.',
@@ -376,9 +372,6 @@ export class OrderController {
       } else if (!hasPendingOrderItems) {
         await OrderModel.updateOrderStatus(order.id_order, 'LISTO PARA PAGAR')
       }
-
-      // io.to('cocina').emit('update-list-kitchen', { message: 'Se ha actualizado la lista de pedidos en cocina.' })
-
       return res.status(200).json({
         message: orderItem.quantity > quantity ? 'Cantidad disminuida exitosamente.' : 'Ítem eliminado de la orden exitosamente', order: {
           id: order.id_order,
@@ -464,13 +457,14 @@ export class OrderController {
       }
       const allItemsReadyToServed = orderItems.every(item => item.status === 'LISTO PARA SERVIR');
       if (allItemsReadyToServed) {
-        console.log(`📩 Emitiendo evento a mesero_${orderAndItemExits.employee_id}`);
         // Emitir actualización de estado al mesero que creó la orden
         io.to(`mesero_${orderAndItemExits.employee_id}`).emit('update-order-item-status', {
           message: `El pedido de la mesa ${orderAndItemExits.num_table} ahora esta listo para servir.`,
         });
-        console.log('emitiendo evento  de actualización a cocina')
+        // Emitir actualización de lista de cocina
         io.to('cocina').emit('update-list-kitchen')
+        // Emitir actualización de lista de ordenes listas
+        io.to('orders-ready').emit('update-list-orders-ready', { message: `El pedido de la mesa ${orderAndItemExits.num_table} ahora esta listo para servir.` });
       }
 
       return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true, order_id: orderAndItemExits.order_id });
@@ -604,9 +598,6 @@ export class OrderController {
       await OrderModel.updateOrderStatus(order.id_order, 'PAGADO')
       //ACTUALIZAR EL ESTADO DE LA MESA A DISPONIBLE
       await TableModel.updateTableStatus(order.table_id, 'DISPONIBLE')
-
-      io.emit('order-paid', { order_id: order.id_order })
-
       //COMMIT DE LA TRANSACCIÓN
       await connection.commit()
       return res.status(200).json({
