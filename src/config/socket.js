@@ -21,13 +21,13 @@ export const setUpWebSockets = (io) => {
       console.log('❌ Token inválido o expirado:', error.message);
       return next(new Error('Token inválido o expirado'));
     }
-  
+
   })
   //used to store the socket id of the user
   io.on('connection', (socket) => {
     const { user } = socket;
     console.log('Nuevo usuario conectado:', { id: user.id, role_name: user.role_name });
-  
+
     //UNIR AL USUARIO A UN SALA SEGÚN SU ROL
     if (user.role_name === 'cocinero') {
       console.log(`👨‍🍳 Usuario ${user.id} agregado a la cocina`);
@@ -45,7 +45,7 @@ export const setUpWebSockets = (io) => {
       console.log(`👨‍🍳 Usuario mesero_${user.id} eliminado de la sala de ordenes listas`);
       socket.leave('orders-ready')
     })
-  
+
     //EMITIR LA ORDEN AL MESERO
     socket.on('send-order-to-kitchen', (orderData) => {
       console.log('🍽️ Nueva orden:', orderData);
@@ -59,10 +59,10 @@ export const setUpWebSockets = (io) => {
       io.to(`mesero_${orderItemData.waiter_id}`).emit('update-order-item-status', orderItemData);
       io.to('cocina').emit('update-list-kitchen', orderItemData)
     });
-  
+
     socket.on('disconnect', () => {
       console.log(`❌ Usuario desconectado (Socket ID: ${user.id})`);
     })
-  
+
   })
 }
