@@ -27,35 +27,18 @@ export const setUpWebSockets = (io) => {
   io.on('connection', (socket) => {
     const { user } = socket;
     console.log('Nuevo usuario conectado:', { id: user.id, role_name: user.role_name });
+    //UNIVER A SALAS 
+    if (user.role_name === 'administrador') socket.join('administrador');
+    if (user.role_name === 'cocinero') socket.join('cocina');
+    if (user.role_name === 'mesero') socket.join(`mesero_${user.id}`);
 
-    //UNIR AL USUARIO A UN SALA SEGÚN SU ROL
-    if (user.role_name === 'cocinero') {
-      console.log(`👨‍🍳 Usuario ${user.id} agregado a la cocina`);
-      socket.join('cocina');
-    }
-    if (user.role_name === 'mesero') {
-      console.log(`👨‍🍳 Usuario mesero_${user.id} agregado a la sala`);
-      socket.join(`mesero_${user.id}`);
-    }
-    socket.on('join-orders-ready', () => {
-      console.log(`👨‍🍳 Usuario mesero_${user.id} agregado a la sala de ordenes listas`);
-      socket.join('orders-ready')
-    })
-    socket.on('leave-orders-ready', () => {
-      console.log(`👨‍🍳 Usuario mesero_${user.id} eliminado de la sala de ordenes listas`);
-      socket.leave('orders-ready')
-    })
-
-    //EMITIR LA ORDEN AL MESERO
+    //EVENTOS 
+    socket.on('join-orders-ready', () => socket.join('orders-ready'));
+    socket.on('leave-orders-ready', () => socket.leave('orders-ready'));
     socket.on('send-order-to-kitchen', (orderData) => {
-      console.log('🍽️ Nueva orden:', orderData);
-      //EMITIR LA ORDEN A LA COCINA
       io.to('cocina').emit('new-order-to-send-kitchen', orderData);
     })
-    //EVENTO PARA ACTUALIZAR EL ESTADO DE LA ORDEN
     socket.on('update-order-item-status', (orderItemData) => {
-      console.log('🍽️ Actualizar estado del platillo:', orderItemData);
-      // Emitir evento al mesero que creó la orden
       io.to(`mesero_${orderItemData.waiter_id}`).emit('update-order-item-status', orderItemData);
       io.to('cocina').emit('update-list-kitchen', orderItemData)
     });

@@ -569,13 +569,15 @@ export class OrderController {
       await connection.beginTransaction()
       const { amount_received, employee_id } = req.body
       const order = req.order
+      console.log("amount_received:", amount_received, typeof amount_received);
+      console.log("order.total:", order.total, typeof order.total);
       //VERIFICAR SI LA ORDEN ESTA LISTA PARA PAGAR
       if (order.order_status !== 'LISTO PARA PAGAR') {
         const error = new Error('La orden no esta lista para pagar')
         return res.status(400).json({ message: error.message, status: false });
       }
       //VALIDAR EL MONTO RECIBIDO
-      if (amount_received < order.total) {
+      if (Number(amount_received) < Number(order.total)) {
         const error = new Error('El monto recibido es menor al total de la orden')
         return res.status(400).json({ message: error.message, status: false });
       }
