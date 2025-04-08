@@ -17,7 +17,7 @@ Este es el servidor backend del sistema de gestión de pedidos para restaurantes
 
 ## 🛠️ Funcionalidades principales
 
-- API RESTful para gestión de usuarios, órdenes y productos.
+- API RESTful para gestión de usuarios, órdenes, productos mesas y demás.
 - Autenticación y autorización basada en JWT.
 - Validación de datos con Express Validator.
 - Subida de imágenes a Cloudinary usando Multer.
