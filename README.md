@@ -33,7 +33,7 @@ Este es el servidor backend del sistema de gestión de pedidos para restaurantes
 
 2. Installar dependencias
   ```bash
-  npm install
+    npm install
   ```
 3. Configuración variabels de entorno (.env)
 ```bash
@@ -46,11 +46,11 @@ Este es el servidor backend del sistema de gestión de pedidos para restaurantes
   CLOUDINARY_CLOUD_NAME=nombre_cloudinary
   CLOUDINARY_API_KEY=api_key_de_cloudinary
   CLOUDINARY_API_SECRET=api_secret_cloudinary
-FRONTEND_URL=tu_url_frontend
+  FRONTEND_URL=tu_url_frontend
 ```
 4. Iniciar el Servidor
    ```bash
-     npm install
+   npm install
    ```
 
 ## WebSocket eventos Principales
