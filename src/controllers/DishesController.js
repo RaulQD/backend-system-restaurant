@@ -81,7 +81,7 @@ export class DishesController {
       if (req.file) {
         //ELIMNAR LA IMAGEN ANTERIOR en cloudinary
         if (dish.image_url) {
-          const public_id = existingDish.image_url.split('/').pop().split('.')[0];
+          const public_id = dish.image_url.split('/').pop();
           console.log('Eliminando imagen anterior', public_id);
           const destroyResponse = await cloudinary.uploader.destroy(`dishes/${public_id}`);
           if (destroyResponse.result === 'ok') {

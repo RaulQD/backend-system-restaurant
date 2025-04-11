@@ -43,6 +43,16 @@ export class EmployeeModel {
       throw new Error('Error al obtener el empleado')
     }
   }
+  static async findByEmailAndExcludingId(email, id) {
+    try {
+      const [result] = await pool.query('SELECT id_employee, email FROM employees WHERE email = ? AND id_employee != ?', [email, id]);
+      return result[0] || null; // Retorna el primer resultado o null si no hay coincidencias
+    } catch (error) {
+      console.error('Error al buscar el email:', error); // Más detalles en consola
+      throw new Error('Error al buscar el email')
+
+    }
+  }
   static async getEmployees(keyword, status, page = 1, limit = 10) {
 
     let offset = (page - 1) * limit;

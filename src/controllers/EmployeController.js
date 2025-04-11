@@ -57,15 +57,14 @@ export class EmployeeController {
     try {
       const { names, last_name, dni, email, phone, address, salary, password, status } = req.body;
       const employee = req.employee;
-      //VALIDAR SI EL USUARIO INGRESA UN EMAIL QUE YA EXISTE EN LA BASE DE DATOS SI NO QUE ACTUALIZE CON EL EMAIL QUE INGRESO
-      if (email && email !== employee.email) {
-        const existingEmail = await EmployeeModel.findByEmail(email);
-        if (existingEmail && existingEmail.id_employee !== employee.id) {
-          const error = new Error('El email ya está en uso');
-          return res.status(400).json({ message: error.message, status: false });
-        }
-      }
 
+      //VALIDAR SI EL EMAIL YA EXISTE EN LA BASE DE DATOS EXCLUYENDO EL ID DEL EMPLEADO QUE SE VA A ACTUALIZAR
+     const existingEmail = await EmployeeModel.findByEmailAndExcludingId(email, employee.id);
+      if (existingEmail) {
+        const error = new Error('El correo electronico ya está en uso');
+        return res.status(400).json({ message: error.message, status: false });
+      }
+      
       let profile_picture_url = employee.profile_picture_url;
       //ACTUALIZAR LA IMAGEN DE PERFIL Y ELIMINAR LA ANTERIOR
       if (req.file) {

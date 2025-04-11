@@ -282,12 +282,7 @@ export class OrderController {
     try {
       const { dish_id, quantity } = req.body
       const order = req.order
-      //VALIDA SI LA ORDEN ESTA EN 
-      if (order.order_status === 'LISTO PARA PAGAR') {
-        await OrderModel.updateOrderStatus(order.id_order, 'PENDIENTE')
-      } else if (order.order_status === 'LISTO PARA SERVIR') {
-        await OrderModel.updateOrderStatus(order.id_order, 'EN PROCESO')
-      }
+      
       const dish = await DishesModel.getDishById(dish_id);
       if (!dish) {
         return res.status(404).json({ message: `Plato con ID ${dish_id} no encontrado`, status: false });
@@ -314,6 +309,11 @@ export class OrderController {
         }
         await OrderDetailsModel.addOrderItems(orderItemData)
       }
+      //VERIFICAMOS SI LA ORDEN ESTA "LISTA PARA PAGAR" SI LO ESTA, CAMBIAMOS EL ESTADO A "PENDIENTE"
+      if(order.order_status === 'LISTO PARA PAGAR'){
+        await OrderModel.updateOrderStatus(order.id_order,'PENDIENTE')
+      } 
+
       // Obtener todos los ítems actuales de la orden
       const orderItems = await OrderDetailsModel.getOrderItems(order.id_order);
       const totalAmount = orderItems.reduce((acc, item) => acc + Number(item.subtotal || 0), 0);
