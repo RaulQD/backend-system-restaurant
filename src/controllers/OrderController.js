@@ -63,7 +63,8 @@ export class OrderController {
           },
           total: order.total,
           minutes_elapsed: order.minutes_elapsed,
-          created_at: order.created_at
+          created_at: order.created_at,
+          start_time: order.start_time,
         }
       })
 
@@ -96,7 +97,8 @@ export class OrderController {
           },
           total: order.total,
           minutes_elapsed: order.minutes_elapsed,
-          created_at: order.created_at
+          created_at: order.created_at,
+          ready_time: order.ready_time,
         }
       })
       return res.status(200).json(ordersData);
@@ -282,7 +284,7 @@ export class OrderController {
     try {
       const { dish_id, quantity } = req.body
       const order = req.order
-      
+
       const dish = await DishesModel.getDishById(dish_id);
       if (!dish) {
         return res.status(404).json({ message: `Plato con ID ${dish_id} no encontrado`, status: false });
@@ -310,9 +312,9 @@ export class OrderController {
         await OrderDetailsModel.addOrderItems(orderItemData)
       }
       //VERIFICAMOS SI LA ORDEN ESTA "LISTA PARA PAGAR" SI LO ESTA, CAMBIAMOS EL ESTADO A "PENDIENTE"
-      if(order.order_status === 'LISTO PARA PAGAR'){
-        await OrderModel.updateOrderStatus(order.id_order,'PENDIENTE')
-      } 
+      if (order.order_status === 'LISTO PARA PAGAR') {
+        await OrderModel.updateOrderStatus(order.id_order, 'PENDIENTE')
+      }
 
       // Obtener todos los ítems actuales de la orden
       const orderItems = await OrderDetailsModel.getOrderItems(order.id_order);
@@ -457,6 +459,9 @@ export class OrderController {
       }
       const allItemsReadyToServed = orderItems.every(item => item.status === 'LISTO PARA SERVIR');
       if (allItemsReadyToServed) {
+        //registrar el tiempo de la orden cuando todos los items estan listos para servir
+        await OrderModel.updateOrderEndTime(orderId)
+        await OrderModel.updateOrderReadyTime(orderId)
         // Emitir actualización de estado al mesero que creó la orden
         io.to(`mesero_${orderAndItemExits.employee_id}`).emit('update-order-item-status', {
           message: `El pedido de la mesa ${orderAndItemExits.num_table} ahora esta listo para servir.`,
@@ -494,7 +499,7 @@ export class OrderController {
         return res.status(404).json({ message: error.message, status: false });
       }
       //CAMBIAR EL ESTADO DE LA ORDEN A EN PENDIENTE
-      await OrderModel.updateOrderStatus(order.id_order, 'PENDIENTE')
+      await OrderModel.sendOrderToKitchen(order.id_order, 'PENDIENTE')
 
       io.to('cocina').emit('new-order-to-send-kitchen', { message: 'Tienes una nueva orden para preparar.', order_id: order.id_order })
 
@@ -503,7 +508,7 @@ export class OrderController {
       console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
-        message: error.message, // Mostrar mensaje de error
+        message: error.message,
         status: false
       });
     }

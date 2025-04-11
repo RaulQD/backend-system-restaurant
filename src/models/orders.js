@@ -158,11 +158,11 @@ export class OrderModel {
     }
   }
 
-  static async getOrdersByStatus(order_status, orderBy='created_at') {
+  static async getOrdersByStatus(order_status, orderBy = 'created_at') {
     try {
       //DATE(o.created_at) = CURDATE() AND
-      const [results] = await pool.query(`SELECT o.id_order,o.order_number, o.employee_id, e.names, e.last_name, o.table_id, t.num_table, o.order_status, o.total, TIMESTAMPDIFF(MINUTE, o.created_at, NOW()) AS minutes_elapsed, o.created_at FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?) ORDER BY FIELD(o.order_status, 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR'), o.${orderBy} ASC;`, [order_status]);
-      if(results.length === 0){
+      const [results] = await pool.query(`SELECT o.id_order,o.order_number, o.employee_id, e.names, e.last_name, o.table_id, t.num_table, o.order_status, o.total, o.created_at,o.start_time, o.ready_time FROM orders o JOIN employees e ON o.employee_id = e.id_employee JOIN tables t ON o.table_id = t.id_table WHERE order_status IN (?) ORDER BY FIELD(o.order_status, 'PENDIENTE', 'EN PROCESO', 'LISTO PARA SERVIR'), o.${orderBy} ASC;`, [order_status]);
+      if (results.length === 0) {
         return [];
       }
       return results;
@@ -203,6 +203,23 @@ export class OrderModel {
       throw new Error('Error al actualizar el estado de la orden');
     }
   }
+  static async updateOrderEndTime(orderId) {
+    try {
+      await pool.query('UPDATE orders SET end_time = NOW() WHERE id_order = ?', [orderId])
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al actualizar el tiempo de la orden');
+    }
+  }
+  static async updateOrderReadyTime(orderId) {
+    try {
+      await pool.query('UPDATE orders SET ready_time = NOW() WHERE id_order = ?', [orderId]);
+    }
+    catch (error) {
+      console.log(error);
+      throw new Error('Error al actualizar el tiempo de la orden');
+    }
+  }
   static async updateOrderItemStatus(orderId, itemId, status) {
     try {
       await pool.query('UPDATE order_details SET status = ? WHERE order_id = ? AND id_item = ?', [status, orderId, itemId])
@@ -221,7 +238,7 @@ export class OrderModel {
   }
   static async sendOrderToKitchen(orderId) {
     try {
-      await pool.query('UPDATE orders SET order_status = ? WHERE id_order = ? ', ['PENDIENTE', orderId])
+      await pool.query('UPDATE orders SET order_status = ?, start_time = NOW() WHERE id_order = ? ', ['PENDIENTE', orderId])
     } catch (error) {
       console.log(error);
       throw new Error('Error al enviar la orden a cocina');
