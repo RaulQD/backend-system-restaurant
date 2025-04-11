@@ -49,9 +49,9 @@ Este es el servidor backend del sistema de gestión de pedidos para restaurantes
   FRONTEND_URL=tu_url_frontend
 ```
 4. Iniciar el Servidor
-   ```bash
-   npm install
-   ```
+```bash
+  npm install
+```
 
 ## WebSocket eventos Principales
 - Nuevas Ordenes Enviadas a cocina.
