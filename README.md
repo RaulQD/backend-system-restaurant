@@ -17,12 +17,12 @@ Este es el servidor backend del sistema de gestión de pedidos para restaurantes
 
 ## 🛠️ Funcionalidades principales
 
-- API RESTful para gestión de usuarios, órdenes, productos mesas y demás.
-- Autenticación y autorización basada en JWT.
+- CRUD de usuarios, órdenes, productos, mesas y salones.
+- Autenticación y autorización con JWT.
 - Validación de datos con Express Validator.
 - Subida de imágenes a Cloudinary usando Multer.
-- Comunicación en tiempo real con Socket.IO (actualización de órdenes).
-- Conexión a base de datos MySQL2.
+- Comunicación en tiempo real con WebSocket (Socket.IO).
+- Conexión a base de datos MySQL.
 
 ## 📦 Instalación
 
@@ -55,5 +55,5 @@ Este es el servidor backend del sistema de gestión de pedidos para restaurantes
 
 ## WebSocket eventos Principales
 - Nuevas Ordenes Enviadas a cocina.
-- Actualización de estados de productos
+- Actualización de estados de productos.
 - Notificación en tiempo real.
