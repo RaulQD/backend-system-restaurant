@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import fs from 'fs';
 
 
 export const pool = mysql.createPool({
