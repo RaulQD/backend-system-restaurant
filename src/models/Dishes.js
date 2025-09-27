@@ -121,15 +121,30 @@ export class DishesModel {
   static async updateDish(id_dish, input) {
     const { dishes_name, dishes_description, price, available, image_url, category_name } = input
 
-    const [categoryResult] = await pool.query('SELECT id_category  FROM category WHERE category_name = ?', [category_name])
+    const [categoryResult] = await pool.query('SELECT id_category FROM category WHERE category_name = ?', [category_name])
     if (categoryResult.length === 0) {
       throw new Error('La categoria no existe')
     }
     const [{ id_category }] = categoryResult
     try {
-      // 3 - UPDATE THE DISH
-      const [result] = await pool.query('UPDATE dishes SET dishes_name = ?, dishes_description = ?, price = ?, available = ?, image_url = ? , category_id = ? WHERE id_dish = ?', [dishes_name, dishes_description, price, available, image_url, id_category, id_dish])
-      return result
+
+       await pool.query('UPDATE dishes SET dishes_name = ?, dishes_description = ?, price = ?, available = ?, image_url = ? , category_id = ? WHERE id_dish = ?', [dishes_name, dishes_description, price, available, image_url, id_category, id_dish])
+      
+      //mapear el resultado a un objeto
+      const updatedDish = {
+        id: id_dish,
+        dishes_name,
+        dishes_description,
+        price,
+        available,
+        image_url,
+        category: {
+          id: id_category,
+          category_name
+        }
+      }
+
+      return updatedDish;
 
     } catch (error) {
       console.error('Error al actualizar el plato:', error); // Más detalles en consola

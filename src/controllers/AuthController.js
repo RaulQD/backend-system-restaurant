@@ -48,7 +48,7 @@ export class AuthController {
         }
 
     }
-    static async createAccount(req, res) {
+    static async createAccount(req, res, next) {
         const { dni, email, username, password, role_name } = req.body
 
         try {
@@ -65,7 +65,7 @@ export class AuthController {
             const userId = user.insertId
             //  5. Crear empleado
             if (!req.file) {
-                return res.status(400).json({ error: 'La imagen del plato es requerida.' });
+                return res.status(400).json({ error: 'La imagen del usuario es requerida.' });
             }
             const result = await cloudinary.uploader.upload(`data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
                 folder: 'employees'

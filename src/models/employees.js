@@ -12,8 +12,15 @@ export class EmployeeModel {
       }
       return existingEmail;
     } catch (error) {
-      console.error('Error al buscar el email:', error); // Más detalles en consola
-      throw new Error('Error al buscar el email')
+      // Si el error ya tiene statusCode (como el que creamos arriba), lo relanzamos
+      if (error.statusCode) {
+        throw error;
+      }
+      // Si es un error de base de datos u otro, creamos un error genérico
+      console.error('Error en findByEmail:', error.message);
+      const dbError = new Error('Error al buscar el email');
+      dbError.statusCode = 500;
+      throw dbError;
     }
   }
   static async findByDni(dni) {
@@ -26,8 +33,15 @@ export class EmployeeModel {
       }
       return existingDni;
     } catch (error) {
-      console.error('Error al buscar el DNI:', error); // Más detalles en consola
-      throw new Error('Error al buscar el DNI')
+      // Si el error ya tiene statusCode (como el que creamos arriba), lo relanzamos
+      if (error.statusCode) {
+        throw error;
+      }
+      // Si es un error de base de datos u otro, creamos un error genérico
+      console.error('Error en findByDNI:', error.message);
+      const dbError = new Error('Error al buscar el dni');
+      dbError.statusCode = 500;
+      throw dbError;
     }
   }
   static async findByEmployeeId(employee_id) {

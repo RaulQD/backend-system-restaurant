@@ -460,7 +460,7 @@ export class OrderController {
       const allItemsReadyToServed = orderItems.every(item => item.status === 'LISTO PARA SERVIR');
       if (allItemsReadyToServed) {
         //registrar el tiempo de la orden cuando todos los items estan listos para servir
-        await OrderModel.updateOrderEndTime(orderId)
+
         await OrderModel.updateOrderReadyTime(orderId)
         // Emitir actualización de estado al mesero que creó la orden
         io.to(`mesero_${orderAndItemExits.employee_id}`).emit('update-order-item-status', {
@@ -470,6 +470,10 @@ export class OrderController {
         io.to('cocina').emit('update-list-kitchen')
         // Emitir actualización de lista de ordenes listas
         io.to('orders-ready').emit('update-list-orders-ready', { message: `El pedido de la mesa ${orderAndItemExits.num_table} ahora esta listo para servir.` });
+      }
+      const allItemsServed = orderItems.every(item => item.status === 'SERVIDO');
+      if (allItemsServed) {
+        await OrderModel.updateOrderEndTime(orderId)
       }
 
       return res.status(200).json({ message: 'Estado del item de la orden actualizado exitosamente', status: true, order_id: orderAndItemExits.order_id });

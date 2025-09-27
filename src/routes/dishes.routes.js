@@ -12,7 +12,7 @@ const routes = Router();
 
 
 routes.get('/', validateToken, authorizeRole(['administrador','mesero']), DishesController.getDishes)
-routes.post('/', upload.single('image_url'), dishValidation, handleInputErrors, validateToken, authorizeRole(['administrador']), DishesController.createDish)
+routes.post('/', upload.single('image_url'),authorizeRole(['adminitrador']), dishValidation, handleInputErrors, validateToken, authorizeRole(['administrador']), DishesController.createDish)
 routes.get('/:dishId',
   param('dishId').isInt().withMessage('El id no es válido.'),
   validateToken,

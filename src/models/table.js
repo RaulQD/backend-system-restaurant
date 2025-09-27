@@ -6,13 +6,18 @@ export class TableModel {
     const [results] = await pool.query('SELECT * FROM tables WHERE id_table = ?', [id])
     return results[0]
   }
-  static async fingByTableNumber(num_table) {
+  static async findByTableNumber(num_table) {
     try {
       const [results] = await pool.query('SELECT id_table, num_table,capacity_table FROM tables WHERE num_table = ?', [num_table])
-      return results[0]
+     
+      return results;
     } catch (error) {
-      console.log(error)
-      throw new Error('Error al buscar la mesa')
+      if (error.statusCode) {
+        throw error;
+      }
+      const dbError = new Error('Error al buscar la mesa');
+      dbError.statusCode = 500;
+      throw dbError;
     }
   }
 
@@ -31,7 +36,7 @@ export class TableModel {
       queryParams.push(room)
       countParams.push(room)
     }
-    
+
     query += ` ORDER BY id_table ASC`;
 
     query += ` LIMIT ? OFFSET ?`
@@ -75,7 +80,7 @@ export class TableModel {
   static async getTableById(tableId) {
     try {
       const [results] = await pool.query('SELECT t.id_table, t.num_table, t.capacity_table, r.id_room, r.room_name FROM tables t JOIN rooms r ON t.room_id = r.id_room WHERE id_table = ?', [tableId])
-      
+
       const table = results[0];
       return table
     } catch (error) {
@@ -90,13 +95,13 @@ export class TableModel {
     return results
   }
 
-  static async getTableByRoomId(roomId){
+  static async getTableByRoomId(roomId) {
     try {
-        const [results] = await pool.query('SELECT id_table, num_table, capacity_table, status FROM tables WHERE room_id = ?', [roomId])
-        return results 
+      const [results] = await pool.query('SELECT id_table, num_table, capacity_table, status FROM tables WHERE room_id = ?', [roomId])
+      return results
     } catch (error) {
-        console.log(error)
-        throw new Error('Error al obtener las mesas por el id de la sala')
+      console.log(error)
+      throw new Error('Error al obtener las mesas por el id de la sala')
     }
   }
   //FUNCIÓN PARA OBTENER SI LA MESA ESTÁ OCUPADA O NO
@@ -113,7 +118,7 @@ export class TableModel {
       const [result] = await pool.query(`INSERT INTO tables ( num_table, capacity_table, room_id) VALUES (?,?,?)`, [num_table, capacity_table, roomId])
       return result;
     } catch (error) {
-      throw new Error('Error al crear la mesa')
+      throw error;
     }
   }
   static async updateTable(tableId, data) {
@@ -121,7 +126,7 @@ export class TableModel {
     try {
       await pool.query('UPDATE tables SET num_table = ?, capacity_table = ?, room_id = ? WHERE id_table = ?', [num_table, capacity_table, room_id, tableId])
     } catch (error) {
-      throw new Error('Error al actualizar la mesa')
+      throw error;
     }
   }
 
@@ -129,7 +134,7 @@ export class TableModel {
     try {
       await pool.query('UPDATE tables SET status = ? WHERE id_table = ?', [status, id])
     } catch (error) {
-      throw new Error('Error al actualizar el estado de la mesa')
+      throw error;
     }
 
   }

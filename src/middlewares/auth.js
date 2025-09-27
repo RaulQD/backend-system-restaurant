@@ -3,10 +3,10 @@ import { UserModel } from '../models/user.js'
 import { body } from 'express-validator';
 
 const ERROR_MESSAGES = {
-  TOKEN_MISSING: 'Token no proporcionado o formato incorrecto',
-  USER_NOT_FOUND: 'Usuario no autorizado o no encontrado',
-  TOKEN_INVALID: 'Token inválido o expirado',
-  TOKEN_EXPIRED: 'Token expirado'
+  TOKEN_MISSING: 'Token de autorización no proporcionado.',
+  USER_NOT_FOUND: 'Usuario no autorizado o no encontrado.',
+  TOKEN_INVALID: 'Token de autorización inválido o corrupto.',
+  TOKEN_EXPIRED: 'Sesión expirada. Por favor, inicia sesión nuevamente.'
 };
 
 export const validateToken = async (req, res, next) => {
@@ -41,12 +41,33 @@ export const validateToken = async (req, res, next) => {
     req.user = user
     next()
   } catch (error) {
-    // Verificar si el token ha expirado
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: ERROR_MESSAGES.TOKEN_EXPIRED, status: false });
+      return res.status(401).json({
+        message: ERROR_MESSAGES.TOKEN_EXPIRED,
+        status: false
+      });
     }
+
+    if (error.name === 'JsonWebTokenError') {
+      // Esto incluye "invalid signature" y otros errores de formato
+      return res.status(401).json({
+        message: ERROR_MESSAGES.TOKEN_INVALID,
+        status: false
+      });
+    }
+
+    if (error.name === 'NotBeforeError') {
+      return res.status(401).json({
+        message: 'Token aún no es válido',
+        status: false
+      });
+    }
+
     // Manejar otros errores del token
-    return res.status(401).json({ message: error.message, status: false });
+    return res.status(401).json({
+      message: ERROR_MESSAGES.TOKEN_INVALID,
+      status: false
+    });
   }
 }
 // Middleware para validar roles

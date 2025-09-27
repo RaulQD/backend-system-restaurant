@@ -11,10 +11,7 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  ssl: {
-    ca: fs.readFileSync('../ssl/ca-certificate.crt'),
-    rejectUnauthorized: false
-  }
+
 });
 
 export const connectMysql = async () => {

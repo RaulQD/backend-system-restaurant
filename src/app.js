@@ -1,8 +1,6 @@
 
-import { UserModel } from './models/user.js';
 import { server } from './server.js';
 import { Server as WebSocketServer } from 'socket.io';
-import jwt from 'jsonwebtoken';
 import { setUpWebSockets } from './config/socket.js';
 
 const PORT = process.env.PORT

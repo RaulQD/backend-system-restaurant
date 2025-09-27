@@ -8,9 +8,17 @@ export const roomValidation = [
     .isString().withMessage('El nombre debe ser una cadena de texto')
     .trim(),
   body('num_tables')
+    .trim()
     .notEmpty().withMessage('El número de mesas es requerido')
-    .isString({ min: 1 }).withMessage('La cantidad de mesas debe ser mayor a 0')
-    .trim(),
+    .isNumeric().withMessage('Debe ser un número válido')
+    .custom((value) => {
+      const num = parseInt(value, 10)
+      if (isNaN(num) || num < 1 || num > 100) {
+        throw new Error('La cantidad de mesas debe estar entre 1 y 100')
+      }
+      return true
+    })
+    .toInt()
 
 ]
 

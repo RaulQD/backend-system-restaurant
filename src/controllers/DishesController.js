@@ -82,7 +82,7 @@ export class DishesController {
         //ELIMNAR LA IMAGEN ANTERIOR en cloudinary
         if (dish.image_url) {
           const public_id = dish.image_url.split('/').pop();
-          console.log('Eliminando imagen anterior', public_id);
+
           const destroyResponse = await cloudinary.uploader.destroy(`dishes/${public_id}`);
           if (destroyResponse.result === 'ok') {
             const error = new Error('Error al eliminar la imagen anterior');
@@ -94,11 +94,9 @@ export class DishesController {
         const result = await cloudinary.uploader.upload(`data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
           folder: 'dishes'
         })
-        //ACTUALIZAR LA URL DE LA IMAGEN
         image_url = result.secure_url;
-        console.log('Nueva imagen', image_url)
       }
-      // OBJETO DEL PLATO
+
       const updateDish = {
         dishes_name,
         dishes_description,
@@ -111,7 +109,6 @@ export class DishesController {
       const updatedDish = await DishesModel.updateDish(dish.id, updateDish);
       return res.status(200).json({ message: 'Plato actualizado exitosamente', status: true, updatedDish })
     } catch (error) {
-      console.log(error)
       return res.status(400).json({
         message: error.message, // Mostrar mensaje de error
         status: false

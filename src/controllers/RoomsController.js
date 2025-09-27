@@ -61,8 +61,8 @@ export class RoomsController {
       const room = req.room
 
       //VALIDATE IF THE ROOM NAME ALREADY EXISTS
-      if (room_name && room_name !== room.room_name) {
-        const existingRoom = await RoomsModel.findRoomByName(room_name)
+      if (room_name !== room.room_name) {
+        const existingRoom = await RoomsModel.findRoomByName(room_name.trim());
         if (existingRoom && existingRoom.id_room !== room.id_room) {
           const error = new Error('El nombre de la sala ya está en uso')
           return res.status(400).json({ message: error.message, status: false })

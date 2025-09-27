@@ -61,8 +61,8 @@ export class TableController {
           room: table.room_name,
           id_employee: table.id_employee,
           employee_name: table.employee_name,
-          employee_last_name:table.employee_last_name,
-          total_amount : table.total_amount
+          employee_last_name: table.employee_last_name,
+          total_amount: table.total_amount
         }
       })
 
@@ -71,7 +71,7 @@ export class TableController {
       console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
-        message: error.message, 
+        message: error.message,
         status: false
       });
     }
@@ -80,36 +80,35 @@ export class TableController {
   static async createTable(req, res) {
     const { num_table, capacity_table, room_id } = req.body
     try {
-      //
-      const numTableExisting = await TableModel.fingByTableNumber(num_table)
-      if (numTableExisting) {
-        const error = new Error('La mesa ya esta registrada.')
-        return res.status(400).json({ message: error.message, status: false })
+
+      const tableNumber = await TableModel.findByTableNumber(num_table);
+      if (tableNumber) {
+        const error = new Error('El número de mesa ya está registrado.');
+        return res.status(400).json({ message: error.message, status: false });
       }
-      // Verificar si la sala existe
+
       const room = await RoomsModel.getRoomById(room_id);
       if (!room) {
         const error = new Error('La sala no existe.');
         return res.status(404).json({ message: error.message, status: false });
       }
-      //VALIDAR QUE LA SALA NO TENGA MÁS MESAS DE LAS PERMITIDAS
       const tables = await TableModel.getTableByRoomId(room_id)
       if (tables.length >= room.num_tables) {
         const error = new Error('La sala ya tiene el número máximo de mesas permitidas.');
         return res.status(400).json({ message: error.message, status: false });
       }
 
-      // Crear la mesa
+
       const tableCreated = await TableModel.createTable({ num_table, capacity_table }, room_id);
-      // Obtener la mesa recién creada
+
       const table = await TableModel.getTableById(tableCreated.insertId);
 
       return res.status(201).json({ message: 'Mesa creada exitosamente', status: true, table })
+
     } catch (error) {
-      console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
-        message: error.message, // Mostrar mensaje de error
+        message: error.message,
         status: false
       });
     }
@@ -125,21 +124,22 @@ export class TableController {
       console.log(error)
       const statusCode = error.statusCode || 500
       return res.status(statusCode).json({
-        message: error.message, // Mostrar mensaje de error
+        message: error.message,
         status: false
       });
     }
   }
   static async updateTable(req, res) {
+    const { num_table, capacity_table, room_id } = req.body
+    const table = req.table
     try {
-      const { num_table, capacity_table, room_id } = req.body
-      const table = req.table
-     
+
       const room = await RoomsModel.getRoomById(room_id)
       if (!room) {
         const error = new Error('La sala no existe')
         return res.status(404).json({ message: error.message, status: false })
       }
+
       const data = { num_table, capacity_table, room_id }
       const updateRows = await TableModel.updateTable(table.id_table, data)
       if (updateRows === 0) {

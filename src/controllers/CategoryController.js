@@ -73,7 +73,7 @@ export class CategoryController {
   }
   static async updateCategory(req, res) {
     try {
-      const { category_name, category_description } = req.body
+      const { category_name, category_description, status } = req.body
       const category = req.category
 
       //VERIFICAR SI EL NOMBRE DE LA CATEGORIA YA EXISTE EN LA BASE DE DATOS SI NO ACTUALIZAR CON EL MISMO NOMBRE
@@ -84,7 +84,7 @@ export class CategoryController {
           return res.status(400).json({ message: error.message, status: false })
         }
       }
-      const data = { category_name, category_description }
+      const data = { category_name, category_description, status }
       //ACTUALIZAR LA CATEGORIA
       const updateCategory = await CategoryModel.updateCategory(data, category.id)
       if (updateCategory.affectedRows === 0) {
@@ -106,7 +106,6 @@ export class CategoryController {
       await CategoryModel.deleteCategory(category.id);
       return res.status(200).json({ message: 'La categoria se elimino correctamente.' })
     } catch (error) {
-      console.log(error)
       return res.status(500).json({ message: 'Internal server error' })
     }
   }

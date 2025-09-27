@@ -6,17 +6,17 @@ export class CategoryModel {
     return result[0] || null;
   }
   static async getCategories() {
-    const [result] = await pool.query('SELECT id_category as id, category_name, category_description FROM category')
+    const [result] = await pool.query('SELECT id_category as id, category_name, category_description,status FROM category')
     return result
   }
 
   static async getCategoriesPaginations(keyword, page = 1, limit = 10) {
     let offset = (page - 1) * limit;
 
-    let query = `SELECT id_category as id, category_name, category_description FROM category WHERE 1=1`
+    let query = `SELECT id_category as id, category_name, category_description, status FROM category WHERE 1=1`
     let countQuery = `SELECT COUNT(*) as total FROM category WHERE 1=1`
     const queryParams = []
-    
+
     //Agregar la búsqueda a la consulta
     if (keyword) {
       query += ` AND LOWER(category_name) LIKE LOWER(CONCAT('%', ?, '%'))`
@@ -51,7 +51,8 @@ export class CategoryModel {
       return {
         id: category.id,
         category_name: category.category_name,
-        category_description: category.category_description
+        category_description: category.category_description,
+        status: category.status
       }
     })
     return {
@@ -65,7 +66,7 @@ export class CategoryModel {
   }
 
   static async getCategoryById(id) {
-    const [result] = await pool.query('SELECT id_category as id, category_name, category_description FROM category WHERE id_category = ?', [id])
+    const [result] = await pool.query('SELECT id_category as id, category_name, category_description,status FROM category WHERE id_category = ?', [id])
     return result[0] || null
   }
   static async createCategory(category_name, category_description) {
@@ -79,20 +80,18 @@ export class CategoryModel {
   }
 
   static async updateCategory(data, id_category) {
-    const { category_name, category_description } = data
+    const { category_name, category_description, status } = data
     try {
-      const [result] = await pool.query('UPDATE category SET category_name = ?, category_description = ? WHERE id_category = ?', [category_name, category_description, id_category])
+      const [result] = await pool.query('UPDATE category SET category_name = ?, category_description = ?, status = ? WHERE id_category = ?', [category_name, category_description, status, id_category])
       return result
     } catch (error) {
-      console.log(error)
       throw new Error('Error al actualizar la categoria')
     }
   }
   static async deleteCategory(id_category) {
     try {
-      await pool.query('DELETE FROM category WHERE id_category = ?', [id_category])
+      await pool.query('UPDATE category SET status = "NO DISPONIBLE" WHERE id_category = ?', [id_category])
     } catch (error) {
-      console.log(error)
       throw new Error('Error al eliminar la categoria')
     }
   }
